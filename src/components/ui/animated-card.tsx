@@ -85,7 +85,7 @@ export function AnimatedProductCard({
           </h3>
         </Link>
         <p className="text-accent font-semibold tracking-wide">
-          {price.toLocaleString('vi-VN')} ₫
+          {(price || 0).toLocaleString('vi-VN')} ₫
         </p>
       </div>
     </motion.div>

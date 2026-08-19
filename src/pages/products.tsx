@@ -59,14 +59,14 @@ const Products = () => {
   const categories = ["all", "Khung Hoa Khô", "Khung Hoa Tươi", "Quà Tặng", "Custom Design"];
 
   const sortedProducts = [...products].sort((a, b) => {
-    if (sortBy === "price-low") return a.price - b.price;
-    if (sortBy === "price-high") return b.price - a.price;
-    if (sortBy === "name") return a.name.localeCompare(b.name);
+    if (sortBy === "price-low") return (a.price || 0) - (b.price || 0);
+    if (sortBy === "price-high") return (b.price || 0) - (a.price || 0);
+    if (sortBy === "name") return (a.name || "").localeCompare(b.name || "");
     return 0;
   });
 
   const filteredProducts = sortedProducts.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (product.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
     (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 

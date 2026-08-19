@@ -89,7 +89,9 @@ const About = () => {
               { icon: Heart, title: "Tâm Huyết", desc: "Chế tác bằng tình yêu và sự tận tâm của nghệ nhân." },
               { icon: Shield, title: "Bền Vững", desc: "Cam kết chất lượng lâu dài theo thời gian." },
               { icon: Users, title: "Khách Hàng", desc: "Sự hài lòng của khách hàng là thành công lớn nhất." },
-            ].map((item, index) => (
+            ].map((item, index) => {
+              const Icon = item.icon;
+              return (
               <motion.div
                 key={item.title}
                 className="bg-white p-8 rounded-sm text-center border border-border"
@@ -98,11 +100,11 @@ const About = () => {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1, duration: 0.5 }}
               >
-                <item.icon className="h-8 w-8 text-primary mx-auto mb-6" strokeWidth={1.5} />
+                <Icon className="h-8 w-8 text-primary mx-auto mb-6" strokeWidth={1.5} />
                 <h3 className="font-serif font-bold text-lg text-foreground mb-3">{item.title}</h3>
                 <p className="text-sm text-foreground/60">{item.desc}</p>
               </motion.div>
-            ))}
+            )})}
           </div>
         </div>
       </section>

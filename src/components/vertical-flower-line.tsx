@@ -7,7 +7,7 @@ const VerticalFlowerLine = () => {
   useEffect(() => {
     const handleScroll = () => {
       const windowHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const scrolled = (window.scrollY / windowHeight) * 100;
+      const scrolled = windowHeight > 0 ? (window.scrollY / windowHeight) * 100 : 0;
       setScrollProgress(scrolled);
     };
 
