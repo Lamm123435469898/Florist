@@ -1,0 +1,12 @@
+D:\Florist-main\Florist-main\Backend\Florist.Domain\bin\Debug\net8.0\Florist.Domain.deps.json
+D:\Florist-main\Florist-main\Backend\Florist.Domain\bin\Debug\net8.0\Florist.Domain.dll
+D:\Florist-main\Florist-main\Backend\Florist.Domain\bin\Debug\net8.0\Florist.Domain.pdb
+D:\Florist-main\Florist-main\Backend\Florist.Domain\obj\Debug\net8.0\Florist.Domain.GeneratedMSBuildEditorConfig.editorconfig
+D:\Florist-main\Florist-main\Backend\Florist.Domain\obj\Debug\net8.0\Florist.Domain.AssemblyInfoInputs.cache
+D:\Florist-main\Florist-main\Backend\Florist.Domain\obj\Debug\net8.0\Florist.Domain.AssemblyInfo.cs
+D:\Florist-main\Florist-main\Backend\Florist.Domain\obj\Debug\net8.0\Florist.Domain.csproj.CoreCompileInputs.cache
+D:\Florist-main\Florist-main\Backend\Florist.Domain\obj\Debug\net8.0\Florist.Domain.sourcelink.json
+D:\Florist-main\Florist-main\Backend\Florist.Domain\obj\Debug\net8.0\Florist.Domain.dll
+D:\Florist-main\Florist-main\Backend\Florist.Domain\obj\Debug\net8.0\refint\Florist.Domain.dll
+D:\Florist-main\Florist-main\Backend\Florist.Domain\obj\Debug\net8.0\Florist.Domain.pdb
+D:\Florist-main\Florist-main\Backend\Florist.Domain\obj\Debug\net8.0\ref\Florist.Domain.dll

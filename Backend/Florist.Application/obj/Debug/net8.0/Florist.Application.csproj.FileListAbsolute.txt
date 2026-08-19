@@ -1,0 +1,16 @@
+D:\Florist-main\Florist-main\Backend\Florist.Application\bin\Debug\net8.0\Florist.Application.deps.json
+D:\Florist-main\Florist-main\Backend\Florist.Application\bin\Debug\net8.0\Florist.Application.dll
+D:\Florist-main\Florist-main\Backend\Florist.Application\bin\Debug\net8.0\Florist.Application.pdb
+D:\Florist-main\Florist-main\Backend\Florist.Application\bin\Debug\net8.0\Florist.Domain.dll
+D:\Florist-main\Florist-main\Backend\Florist.Application\bin\Debug\net8.0\Florist.Domain.pdb
+D:\Florist-main\Florist-main\Backend\Florist.Application\obj\Debug\net8.0\Florist.Application.csproj.AssemblyReference.cache
+D:\Florist-main\Florist-main\Backend\Florist.Application\obj\Debug\net8.0\Florist.Application.GeneratedMSBuildEditorConfig.editorconfig
+D:\Florist-main\Florist-main\Backend\Florist.Application\obj\Debug\net8.0\Florist.Application.AssemblyInfoInputs.cache
+D:\Florist-main\Florist-main\Backend\Florist.Application\obj\Debug\net8.0\Florist.Application.AssemblyInfo.cs
+D:\Florist-main\Florist-main\Backend\Florist.Application\obj\Debug\net8.0\Florist.Application.csproj.CoreCompileInputs.cache
+D:\Florist-main\Florist-main\Backend\Florist.Application\obj\Debug\net8.0\Florist.Application.sourcelink.json
+D:\Florist-main\Florist-main\Backend\Florist.Application\obj\Debug\net8.0\Florist..3180F3AD.Up2Date
+D:\Florist-main\Florist-main\Backend\Florist.Application\obj\Debug\net8.0\Florist.Application.dll
+D:\Florist-main\Florist-main\Backend\Florist.Application\obj\Debug\net8.0\refint\Florist.Application.dll
+D:\Florist-main\Florist-main\Backend\Florist.Application\obj\Debug\net8.0\Florist.Application.pdb
+D:\Florist-main\Florist-main\Backend\Florist.Application\obj\Debug\net8.0\ref\Florist.Application.dll
