@@ -1,0 +1,192 @@
+import { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
+import { AnimatedNavbar } from "@/components/animated-navbar";
+import { AnimatedFooter } from "@/components/animated-footer";
+import VerticalFlowerLine from "@/components/vertical-flower-line";
+import { useAuth } from "@/contexts/auth-context";
+import { supabase } from "@/integrations/supabase/client";
+import { Package, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { motion } from "framer-motion";
+
+interface OrderItem {
+  id: string;
+  quantity: number;
+  price: number;
+  products?: {
+    name: string;
+    image_url: string | null;
+  };
+}
+
+interface Order {
+  id: string;
+  created_at: string;
+  total_amount: number;
+  status: string;
+  order_items?: OrderItem[];
+}
+
+export default function Orders() {
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      fetchOrders();
+    }
+  }, [user]);
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select(`
+          id,
+          created_at,
+          total_amount,
+          status,
+          order_items (
+            id,
+            quantity,
+            price,
+            products (
+              name,
+              image_url
+            )
+          )
+        `)
+        .eq("user_id", user?.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching orders:", error);
+      } else {
+        setOrders(data as any);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (authLoading) return null;
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending': return <Clock className="w-4 h-4 text-accent" />;
+      case 'completed': return <CheckCircle2 className="w-4 h-4 text-primary" />;
+      case 'cancelled': return <XCircle className="w-4 h-4 text-destructive" />;
+      default: return <Package className="w-4 h-4 text-foreground/50" />;
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'pending': return 'Đang xử lý';
+      case 'completed': return 'Hoàn thành';
+      case 'cancelled': return 'Đã hủy';
+      default: return status;
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-background font-sans">
+      <VerticalFlowerLine />
+      <AnimatedNavbar />
+
+      <main className="flex-1 py-32 px-4 lg:px-[10%] container mx-auto">
+        <div className="mb-12 text-center">
+          <h1 className="text-3xl lg:text-4xl font-serif font-bold text-foreground mb-4">Lịch sử đơn hàng</h1>
+          <p className="text-foreground/60 text-sm">Quản lý và theo dõi các đơn hàng bạn đã đặt.</p>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent"></div>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="bg-white rounded-sm p-16 text-center border border-border">
+            <div className="w-16 h-16 bg-secondary/30 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Package className="w-8 h-8 text-foreground/30" strokeWidth={1} />
+            </div>
+            <h2 className="text-xl font-serif font-bold text-foreground mb-2">Chưa có đơn hàng nào</h2>
+            <p className="text-foreground/60 text-sm">Bạn chưa thực hiện giao dịch mua hàng nào tại Florist.</p>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {orders.map((order, index) => (
+              <motion.div 
+                key={order.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white rounded-sm border border-border overflow-hidden"
+              >
+                {/* Header đơn hàng */}
+                <div className="border-b border-border p-6 flex flex-wrap items-center justify-between gap-4 bg-secondary/10">
+                  <div className="space-y-2">
+                    <p className="text-xs text-foreground/50 uppercase tracking-wider">
+                      Mã đơn hàng: <span className="font-mono text-foreground font-medium ml-2">{order.id}</span>
+                    </p>
+                    <p className="text-sm text-foreground/70">
+                      Ngày đặt: {new Date(order.created_at).toLocaleString('vi-VN')}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-sm border border-border">
+                    {getStatusIcon(order.status)}
+                    <span className="font-medium text-sm text-foreground">{getStatusText(order.status)}</span>
+                  </div>
+                </div>
+
+                {/* Danh sách sản phẩm */}
+                <div className="p-6">
+                  <div className="space-y-6">
+                    {order.order_items?.map((item) => (
+                      <div key={item.id} className="flex gap-6 items-center">
+                        <div className="w-16 h-20 bg-secondary/30 rounded-sm overflow-hidden flex-shrink-0">
+                          <img 
+                            src={item.products?.image_url || "https://via.placeholder.com/150"} 
+                            alt={item.products?.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-serif font-medium text-foreground line-clamp-1">{item.products?.name}</h4>
+                          <div className="text-sm text-foreground/50 mt-1">
+                            {item.price.toLocaleString('vi-VN')} ₫ <span className="mx-2">x</span> {item.quantity}
+                          </div>
+                        </div>
+                        <div className="font-medium text-accent">
+                          {(item.price * item.quantity).toLocaleString('vi-VN')} ₫
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tổng kết */}
+                <div className="bg-secondary/5 p-6 flex justify-end items-center border-t border-border">
+                  <div className="text-right flex items-center gap-6">
+                    <span className="text-foreground/70 text-sm">Tổng cộng:</span>
+                    <span className="text-2xl font-bold text-accent">
+                      {order.total_amount.toLocaleString('vi-VN')} ₫
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </main>
+
+      <AnimatedFooter />
+    </div>
+  );
+}
