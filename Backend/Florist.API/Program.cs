@@ -190,6 +190,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/health");
+app.MapGet("/", () => "Florist API is running! (Render Health Check)");
 
 app.Run();
 
