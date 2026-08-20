@@ -151,7 +151,17 @@ var app = builder.Build();
 // Seed Data
 using (var scope = app.Services.CreateScope())
 {
-    await Florist.Infrastructure.Data.DataSeeder.SeedAsync(scope.ServiceProvider);
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    try 
+    {
+        logger.LogInformation("Starting database migration and seeding...");
+        await Florist.Infrastructure.Data.DataSeeder.SeedAsync(scope.ServiceProvider);
+        logger.LogInformation("Database migration and seeding completed successfully.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogCritical(ex, "Failed to migrate or seed the database.");
+    }
 }
 
 // Use Global Exception Middleware
