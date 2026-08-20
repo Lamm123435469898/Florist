@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient } from "@/lib/api-client";
 import { useAuth } from "./auth-context";
 import { useToast } from "@/hooks/use-toast";
 
@@ -46,29 +46,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
+  const mapCartDtoToItems = (cartDto: any): CartItem[] => {
+    if (!cartDto || !cartDto.items) return [];
+    return cartDto.items.map((item: any) => ({
+      id: item.id,
+      product_id: item.productVariantId, // Store variant id as product_id
+      quantity: item.quantity,
+      user_id: user?.id || null,
+      created_at: new Date().toISOString(),
+      products: {
+        id: item.productVariantId,
+        name: item.productName,
+        price: item.price,
+        image_url: item.imageUrl,
+        stock: 100 // Default stock if not provided
+      }
+    }));
+  };
+
   const fetchCartItems = async () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from("cart_items")
-        .select(`
-          *,
-          products:product_id (
-            id,
-            name,
-            price,
-            image_url,
-            stock
-          )
-        `)
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-      
-      // Filter out items with missing products
-      const validItems = (data || []).filter(item => item.products);
-      setItems(validItems);
+      setLoading(true);
+      const { data } = await apiClient.get("/cart");
+      if (data.success && data.data) {
+        setItems(mapCartDtoToItems(data.data));
+      }
     } catch (error) {
       console.error("Error fetching cart items:", error);
       setItems([]);
@@ -80,45 +84,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = async (productId: string, quantity = 1) => {
     if (!user) {
       toast({
-        title: "Error",
-        description: "Please login to add items to cart",
+        title: "Lỗi",
+        description: "Vui lòng đăng nhập để thêm sản phẩm vào giỏ",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      // Check if item already exists
-      const existingItem = items.find(item => item.product_id === productId);
-      
-      if (existingItem) {
-        // Update quantity
-        const newQuantity = existingItem.quantity + quantity;
-        await updateQuantity(existingItem.id, newQuantity);
-      } else {
-        // Add new item
-        const { error } = await supabase
-          .from("cart_items")
-          .insert({
-            user_id: user.id,
-            product_id: productId,
-            quantity,
-          });
+      const { data } = await apiClient.post("/cart/items", {
+        productVariantId: productId,
+        quantity
+      });
 
-        if (error) throw error;
-
+      if (data.success) {
         toast({
-          title: "Success",
-          description: "Item added to cart",
+          title: "Thành công",
+          description: "Đã thêm sản phẩm vào giỏ",
         });
-
-        fetchCartItems();
+        setItems(mapCartDtoToItems(data.data));
       }
     } catch (error) {
       console.error("Error adding item to cart:", error);
       toast({
-        title: "Error",
-        description: "Failed to add item to cart",
+        title: "Lỗi",
+        description: "Không thể thêm sản phẩm",
         variant: "destructive",
       });
     }
@@ -126,24 +116,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeItem = async (itemId: string) => {
     try {
-      const { error } = await supabase
-        .from("cart_items")
-        .delete()
-        .eq("id", itemId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Item removed from cart",
-      });
-
-      fetchCartItems();
+      const { data } = await apiClient.delete(`/cart/items/${itemId}`);
+      if (data.success) {
+        toast({
+          title: "Thành công",
+          description: "Đã xóa sản phẩm khỏi giỏ",
+        });
+        setItems(mapCartDtoToItems(data.data));
+      }
     } catch (error) {
       console.error("Error removing item from cart:", error);
       toast({
-        title: "Error",
-        description: "Failed to remove item from cart",
+        title: "Lỗi",
+        description: "Không thể xóa sản phẩm",
         variant: "destructive",
       });
     }
@@ -156,19 +141,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { error } = await supabase
-        .from("cart_items")
-        .update({ quantity })
-        .eq("id", itemId);
-
-      if (error) throw error;
-
-      fetchCartItems();
+      const { data } = await apiClient.put(`/cart/items/${itemId}`, { quantity });
+      if (data.success) {
+        setItems(mapCartDtoToItems(data.data));
+      }
     } catch (error) {
       console.error("Error updating cart quantity:", error);
       toast({
-        title: "Error",
-        description: "Failed to update quantity",
+        title: "Lỗi",
+        description: "Không thể cập nhật số lượng",
         variant: "destructive",
       });
     }
@@ -178,23 +159,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!user) return;
 
     try {
-      const { error } = await supabase
-        .from("cart_items")
-        .delete()
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-
-      setItems([]);
-      toast({
-        title: "Success",
-        description: "Cart cleared",
-      });
+      const { data } = await apiClient.delete("/cart");
+      if (data.success) {
+        setItems([]);
+        toast({
+          title: "Thành công",
+          description: "Đã xóa toàn bộ giỏ hàng",
+        });
+      }
     } catch (error) {
       console.error("Error clearing cart:", error);
       toast({
-        title: "Error",
-        description: "Failed to clear cart",
+        title: "Lỗi",
+        description: "Không thể làm sạch giỏ hàng",
         variant: "destructive",
       });
     }

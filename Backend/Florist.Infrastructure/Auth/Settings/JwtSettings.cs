@@ -5,6 +5,7 @@ namespace Florist.Infrastructure.Auth.Settings
         public const string SectionName = "JwtSettings";
         public string Secret { get; set; } = string.Empty;
         public int ExpiryMinutes { get; set; }
+        public int RefreshTokenExpiryDays { get; set; } = 7;
         public string Issuer { get; set; } = string.Empty;
         public string Audience { get; set; } = string.Empty;
     }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient } from "@/lib/api-client";
 import { useAuth } from "@/contexts/auth-context";
 import { ProtectedRoute } from "@/components/protected-route";
 import { Button } from "@/components/ui/button";
@@ -31,25 +31,19 @@ function AdminDashboardContent() {
   }, []);
 
   const fetchStats = async () => {
-    // Fetch products count
-    const { count: productsCount } = await supabase
-      .from("products")
-      .select("*", { count: "exact", head: true });
-
-    // Fetch orders count and revenue
-    const { data: orders } = await supabase.from("orders").select("total_amount");
-
-    // Fetch users count
-    const { count: usersCount } = await supabase
-      .from("user_roles")
-      .select("*", { count: "exact", head: true });
-
-    setStats({
-      totalProducts: productsCount || 0,
-      totalOrders: orders?.length || 0,
-      totalUsers: usersCount || 0,
-      totalRevenue: orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0,
-    });
+    try {
+      const { data } = await apiClient.get("/admin/dashboard/stats");
+      if (data.success && data.data) {
+        setStats({
+          totalProducts: data.data.totalProducts || 0,
+          totalOrders: data.data.totalOrders || 0,
+          totalUsers: data.data.totalUsers || 0,
+          totalRevenue: data.data.totalRevenue || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
   };
 
   const handleSignOut = async () => {

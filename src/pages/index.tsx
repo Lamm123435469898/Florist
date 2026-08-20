@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient } from "@/lib/api-client";
 import { ArrowRight, Leaf, ShieldCheck, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimatedNavbar } from "@/components/animated-navbar";
@@ -19,7 +19,6 @@ interface Product {
   price: number;
   image_url: string | null;
   category: string | null;
-  is_featured: boolean | null;
 }
 
 const Index = () => {
@@ -27,12 +26,21 @@ const Index = () => {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("is_featured", true)
-        .limit(4);
-      if (!error) setProducts(data || []);
+      try {
+        const { data } = await apiClient.get("/products?pageSize=4");
+        if (data.success && data.data?.items) {
+          const mappedProducts = data.data.items.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            price: item.variants?.[0]?.price || 0,
+            image_url: item.images?.find((img: any) => img.isPrimary)?.imageUrl || item.images?.[0]?.imageUrl || null,
+            category: item.categoryName
+          }));
+          setProducts(mappedProducts);
+        }
+      } catch (error) {
+        console.error("Failed to load products", error);
+      }
     })();
   }, []);
 

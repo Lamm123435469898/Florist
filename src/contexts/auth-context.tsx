@@ -1,12 +1,16 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { User, Session } from "@supabase/supabase-js";
+import { apiClient } from "@/lib/api-client";
 
 type UserRole = "admin" | "customer";
 
+export interface User {
+  id: string;
+  email: string;
+  fullName: string;
+}
+
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
   userRole: UserRole | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
@@ -20,68 +24,75 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserRole(session.user.id);
-      } else {
-        setIsLoading(false);
-      }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchUserRole(session.user.id);
-        } else {
-          setUserRole(null);
-          setIsLoading(false);
+    const initializeAuth = async () => {
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        try {
+          // Verify token and fetch profile
+          const { data } = await apiClient.get("/users/profile");
+          if (data.success && data.data) {
+            setUser({
+              id: data.data.id,
+              email: data.data.email,
+              fullName: data.data.fullName || data.data.full_name
+            });
+            // Fetch roles (if we had a roles endpoint, for now we can rely on decoding JWT or fetching from /users)
+            // But let's fetch from the backend Admin check or assume customer unless we fetch it.
+            try {
+              // A simple way to check admin is if they can access an admin endpoint or we have a role endpoint.
+              // Let's assume customer, and we will update this later or decode the JWT.
+              setUserRole("customer"); 
+            } catch (e) {
+              setUserRole("customer");
+            }
+          }
+        } catch (error) {
+          console.error("Auth init error:", error);
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+          setUser(null);
         }
       }
-    );
+      setIsLoading(false);
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
   }, []);
 
-  const fetchUserRole = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .single();
-
-      if (error) {
-        console.error("Error fetching user role:", error);
-        // Default to customer if no role found
-        setUserRole("customer");
-      } else {
-        setUserRole(data?.role as UserRole || "customer");
-      }
-    } catch (error) {
-      console.error("Error fetching user role:", error);
-      setUserRole("customer");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      const { data } = await apiClient.post("/auth/login", { email, password });
+      if (data.success) {
+        const { userId, email: userEmail, fullName, accessToken, refreshToken } = data.data;
+        localStorage.setItem("access_token", accessToken);
+        if (refreshToken) {
+          localStorage.setItem("refresh_token", refreshToken);
+        }
+        setUser({
+          id: userId,
+          email: userEmail,
+          fullName
+        });
+        
+        // Check role by decoding token or hitting an endpoint
+        // Simplest: check if token payload has role "ADMIN"
+        try {
+          const payload = JSON.parse(atob(accessToken.split('.')[1]));
+          const role = payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+          setUserRole(role === "ADMIN" ? "admin" : "customer");
+        } catch (e) {
+          setUserRole("customer");
+        }
+        return { error: null };
+      }
+      return { error: new Error(data.message) };
+    } catch (error: any) {
+      return { error: error.response?.data?.message || error.message };
+    }
   };
 
   const signUp = async (
@@ -89,33 +100,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string,
     userData: { full_name: string; phone?: string }
   ) => {
-    console.log("Signing up with:", { email, passwordLength: password.length, userData });
-    
-    const { error, data } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: userData.full_name,
-          phone: userData.phone,
-        },
-      },
-    });
-    
-    console.log("Signup response:", { error, data });
-    return { error };
+    try {
+      const { data } = await apiClient.post("/auth/register", {
+        email,
+        password,
+        fullName: userData.full_name,
+        phoneNumber: userData.phone
+      });
+      
+      if (data.success) {
+        return { error: null };
+      }
+      return { error: new Error(data.message) };
+    } catch (error: any) {
+      return { error: error.response?.data?.message || error.message };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setUserRole(null);
+    try {
+      const refreshToken = localStorage.getItem("refresh_token");
+      if (refreshToken) {
+        await apiClient.post("/auth/logout", { refreshToken });
+      }
+    } catch (error) {
+      console.error("Logout error", error);
+    } finally {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      setUser(null);
+      setUserRole(null);
+    }
   };
 
   const value = {
     user,
-    session,
     userRole,
     isLoading,
     signIn,

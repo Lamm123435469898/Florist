@@ -59,7 +59,7 @@ namespace Florist.Application.Services
             var item = await _cartRepo.GetCartItemByIdAsync(cartItemId)
                 ?? throw new NotFoundException("Cart item not found.");
 
-            if (item.CartId != cart.Id) throw new UnauthorizedException("Access denied.");
+            if (item.CartId != cart.Id) throw new ForbiddenException("Access denied.");
 
             if (request.Quantity <= 0)
             {
@@ -80,7 +80,7 @@ namespace Florist.Application.Services
             var cart = await _cartRepo.GetOrCreateCartAsync(userId);
             var item = await _cartRepo.GetCartItemByIdAsync(cartItemId)
                 ?? throw new NotFoundException("Cart item not found.");
-            if (item.CartId != cart.Id) throw new UnauthorizedException("Access denied.");
+            if (item.CartId != cart.Id) throw new ForbiddenException("Access denied.");
             await _cartRepo.RemoveItemAsync(item);
             var updatedCart = await _cartRepo.GetOrCreateCartAsync(userId);
             return MapToDto(updatedCart);

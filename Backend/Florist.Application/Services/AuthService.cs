@@ -3,6 +3,7 @@ using Florist.Application.Exceptions;
 using Florist.Application.Interfaces.Auth;
 using Florist.Application.Interfaces.Repositories;
 using Florist.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -24,9 +25,7 @@ namespace Florist.Application.Services
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
             if (await _userRepository.ExistsByEmailAsync(request.Email))
-            {
-                throw new BadRequestException("Email is already in use.");
-            }
+                throw new ConflictException("Email is already in use.");
 
             var user = new User
             {
@@ -37,43 +36,69 @@ namespace Florist.Application.Services
             };
 
             var createdUser = await _userRepository.AddUserAsync(user);
-
             var userRole = await _userRepository.GetRoleByNameAsync("USER");
             if (userRole != null)
-            {
                 await _userRepository.AddUserRoleAsync(new UserRole { UserId = createdUser.Id, RoleId = userRole.Id });
-            }
 
             var roles = new List<string> { "USER" };
-            var token = _jwtTokenGenerator.GenerateToken(createdUser, roles);
-
-            return new AuthResponse
-            {
-                UserId = createdUser.Id,
-                Email = createdUser.Email,
-                FullName = createdUser.FullName,
-                AccessToken = token
-            };
+            return await BuildAuthResponse(createdUser, roles);
         }
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
             var user = await _userRepository.GetUserByEmailAsync(request.Email);
             if (user == null || !_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
-            {
                 throw new UnauthorizedException("Invalid email or password.");
-            }
 
             var roles = await _userRepository.GetUserRolesAsync(user.Id);
-            var token = _jwtTokenGenerator.GenerateToken(user, roles);
+            return await BuildAuthResponse(user, roles);
+        }
+
+        public async Task<AuthResponse> RefreshTokenAsync(RefreshTokenRequest request)
+        {
+            var refreshToken = await _userRepository.GetRefreshTokenAsync(request.RefreshToken)
+                ?? throw new UnauthorizedException("Invalid or expired refresh token.");
+
+            if (refreshToken.ExpiresAt < DateTime.UtcNow)
+                throw new UnauthorizedException("Refresh token has expired.");
+
+            // Revoke old refresh token (rotation)
+            await _userRepository.RevokeRefreshTokenAsync(request.RefreshToken);
+
+            var user = refreshToken.User!;
+            var roles = await _userRepository.GetUserRolesAsync(user.Id);
+            return await BuildAuthResponse(user, roles);
+        }
+
+        public async Task LogoutAsync(LogoutRequest request)
+        {
+            await _userRepository.RevokeRefreshTokenAsync(request.RefreshToken);
+        }
+
+        private async Task<AuthResponse> BuildAuthResponse(User user, System.Collections.Generic.IEnumerable<string> roles)
+        {
+            var permissions = await _userRepository.GetUserPermissionsAsync(user.Id);
+            var accessToken = _jwtTokenGenerator.GenerateToken(user, roles, permissions);
+            var refreshTokenStr = _jwtTokenGenerator.GenerateRefreshToken();
+            var expiry = _jwtTokenGenerator.GetRefreshTokenExpiry();
+
+            await _userRepository.AddRefreshTokenAsync(new RefreshToken
+            {
+                Token = refreshTokenStr,
+                UserId = user.Id,
+                ExpiresAt = expiry
+            });
 
             return new AuthResponse
             {
                 UserId = user.Id,
                 Email = user.Email,
                 FullName = user.FullName,
-                AccessToken = token
+                AccessToken = accessToken,
+                RefreshToken = refreshTokenStr,
+                AccessTokenExpiry = DateTime.UtcNow.AddMinutes(60)
             };
         }
     }
 }
+

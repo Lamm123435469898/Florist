@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Florist.Infrastructure", "F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Florist.API", "Florist.API\Florist.API.csproj", "{6F234EF7-33A1-496F-B17D-12666740097B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Florist.UnitTests", "Florist.UnitTests\Florist.UnitTests.csproj", "{71D5DC20-C38A-4B9E-B521-92DEFD7BFEDF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Florist.IntegrationTests", "Florist.IntegrationTests\Florist.IntegrationTests.csproj", "{1792193F-0C5C-4586-B03E-5CCDE0A925FB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +40,13 @@ Global
 		{6F234EF7-33A1-496F-B17D-12666740097B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F234EF7-33A1-496F-B17D-12666740097B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6F234EF7-33A1-496F-B17D-12666740097B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71D5DC20-C38A-4B9E-B521-92DEFD7BFEDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71D5DC20-C38A-4B9E-B521-92DEFD7BFEDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71D5DC20-C38A-4B9E-B521-92DEFD7BFEDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71D5DC20-C38A-4B9E-B521-92DEFD7BFEDF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1792193F-0C5C-4586-B03E-5CCDE0A925FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1792193F-0C5C-4586-B03E-5CCDE0A925FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1792193F-0C5C-4586-B03E-5CCDE0A925FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1792193F-0C5C-4586-B03E-5CCDE0A925FB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

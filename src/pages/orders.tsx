@@ -4,7 +4,7 @@ import { AnimatedNavbar } from "@/components/animated-navbar";
 import { AnimatedFooter } from "@/components/animated-footer";
 import VerticalFlowerLine from "@/components/vertical-flower-line";
 import { useAuth } from "@/contexts/auth-context";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient } from "@/lib/api-client";
 import { Package, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -27,7 +27,7 @@ interface Order {
 }
 
 export default function Orders() {
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,33 +40,27 @@ export default function Orders() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
-          id,
-          created_at,
-          total_amount,
-          status,
-          order_items (
-            id,
-            quantity,
-            price,
-            products (
-              name,
-              image_url
-            )
-          )
-        `)
-        .eq("user_id", user?.id)
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching orders:", error);
-      } else {
-        setOrders(data as any);
+      const { data } = await apiClient.get("/orders/my?page=1&pageSize=50");
+      if (data.success && data.data?.items) {
+        const mappedOrders = data.data.items.map((o: any) => ({
+          id: o.id,
+          created_at: o.createdAt,
+          total_amount: o.finalTotal,
+          status: o.status.toLowerCase(),
+          order_items: (o.orderItems || []).map((item: any) => ({
+            id: item.id,
+            quantity: item.quantity,
+            price: item.price,
+            products: {
+              name: item.productName,
+              image_url: null // Backend OrderItemDto doesn't include image yet
+            }
+          }))
+        }));
+        setOrders(mappedOrders);
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error fetching orders:", error);
     } finally {
       setLoading(false);
     }

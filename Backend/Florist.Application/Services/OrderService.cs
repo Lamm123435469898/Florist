@@ -1,7 +1,9 @@
 using Florist.Application.DTOs.Orders;
 using Florist.Application.DTOs.Products;
 using Florist.Application.Exceptions;
+
 using Florist.Application.Interfaces;
+using Florist.Application.Interfaces.Auth;
 using Florist.Application.Interfaces.Repositories;
 using Florist.Domain.Entities;
 using Florist.Domain.Enums;
@@ -17,12 +19,18 @@ namespace Florist.Application.Services
         private readonly IOrderRepository _orderRepo;
         private readonly ICartRepository _cartRepo;
         private readonly IVoucherRepository _voucherRepo;
+        private readonly IInventoryService _inventoryService;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly ICurrentUserService _currentUserService;
 
-        public OrderService(IOrderRepository orderRepo, ICartRepository cartRepo, IVoucherRepository voucherRepo)
+        public OrderService(IOrderRepository orderRepo, ICartRepository cartRepo, IVoucherRepository voucherRepo, IInventoryService inventoryService, IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
         {
             _orderRepo = orderRepo;
             _cartRepo = cartRepo;
             _voucherRepo = voucherRepo;
+            _inventoryService = inventoryService;
+            _unitOfWork = unitOfWork;
+            _currentUserService = currentUserService;
         }
 
         public async Task<OrderDto> CreateOrderAsync(Guid userId, CreateOrderRequest request)
@@ -46,16 +54,16 @@ namespace Florist.Application.Services
                     voucherId = voucher.Id;
                     discountAmount = voucher.DiscountType == VoucherDiscountType.PERCENTAGE
                         ? Math.Min(subTotal * voucher.DiscountValue / 100, voucher.MaximumDiscount ?? decimal.MaxValue)
-                        : voucher.DiscountValue;
+                        : Math.Min(voucher.DiscountValue, subTotal);
                 }
             }
 
-            // Fixed shipping fee logic (business rule: Backend decides)
             var shippingFee = subTotal >= 500000 ? 0 : 30000;
-            var finalTotal = subTotal - discountAmount + shippingFee;
+            var finalTotal = Math.Max(0, subTotal - discountAmount + shippingFee);
 
             var order = new Order
             {
+                Id = Guid.NewGuid(),
                 UserId = userId,
                 CustomerName = request.CustomerName,
                 CustomerEmail = request.CustomerEmail,
@@ -73,25 +81,41 @@ namespace Florist.Application.Services
                     ProductVariantId = i.ProductVariantId,
                     ProductName = i.ProductVariant.Product?.Name ?? string.Empty,
                     SKU = i.ProductVariant.SKU,
-                    Price = i.ProductVariant.Price, // Snapshot price
+                    Price = i.ProductVariant.Price,
                     Quantity = i.Quantity
                 }).ToList(),
                 Payment = new Payment
                 {
                     PaymentProvider = request.PaymentMethod,
                     Amount = finalTotal,
-                    Status = request.PaymentMethod == "COD" ? PaymentStatus.PENDING : PaymentStatus.PENDING
+                    Status = PaymentStatus.PENDING
                 }
             };
 
-            var created = await _orderRepo.CreateAsync(order);
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                // Reserve stock for all items
+                foreach (var item in order.OrderItems)
+                {
+                    await _inventoryService.ReserveStockAsync(item.ProductVariantId, item.Quantity, order.Id.ToString());
+                }
 
-            if (voucherId.HasValue)
-                await _voucherRepo.MarkUsedAsync(voucherId.Value, userId, created.Id);
+                var created = await _orderRepo.CreateAsync(order);
 
-            await _cartRepo.ClearCartAsync(cart.Id);
+                if (voucherId.HasValue)
+                    await _voucherRepo.MarkUsedAsync(voucherId.Value, userId, created.Id);
 
-            return MapToDto(created);
+                await _cartRepo.ClearCartAsync(cart.Id);
+
+                await _unitOfWork.CommitTransactionAsync();
+                return MapToDto(created);
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
         }
 
         public async Task<PagedResult<OrderDto>> GetMyOrdersAsync(Guid userId, int page, int pageSize)
@@ -108,7 +132,13 @@ namespace Florist.Application.Services
         {
             var order = await _orderRepo.GetByIdAsync(orderId)
                 ?? throw new NotFoundException($"Order {orderId} not found.");
-            if (order.UserId != userId) throw new UnauthorizedException("Access denied.");
+
+            // Resource Ownership
+            if (order.UserId != _currentUserService.UserId && !_currentUserService.HasPermission("order.read"))
+            {
+                throw new ForbiddenException("Access denied.");
+            }
+
             return MapToDto(order);
         }
 
@@ -128,21 +158,66 @@ namespace Florist.Application.Services
                 ?? throw new NotFoundException($"Order {orderId} not found.");
             if (!System.Enum.TryParse<OrderStatus>(request.Status, true, out var newStatus))
                 throw new BadRequestException($"Invalid order status: {request.Status}");
+            
+            // Validate state transition
+            if (order.Status == OrderStatus.DELIVERED && newStatus != OrderStatus.RETURN_REQUESTED)
+                throw new BusinessRuleException("Cannot transition from DELIVERED except for RETURN_REQUESTED.");
+            if (order.Status == OrderStatus.CANCELLED)
+                throw new BusinessRuleException("Cannot change status of a CANCELLED order.");
+
             order.Status = newStatus;
-            var updated = await _orderRepo.UpdateAsync(order);
-            return MapToDto(updated);
+
+            // If cancelled/returned, release inventory
+            if (newStatus == OrderStatus.CANCELLED || newStatus == OrderStatus.RETURNED)
+            {
+                await _unitOfWork.BeginTransactionAsync();
+                try
+                {
+                    foreach (var item in order.OrderItems!)
+                        await _inventoryService.ReleaseStockAsync(item.ProductVariantId, item.Quantity, order.Id.ToString());
+                    
+                    var updated = await _orderRepo.UpdateAsync(order);
+                    await _unitOfWork.CommitTransactionAsync();
+                    return MapToDto(updated);
+                }
+                catch
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    throw;
+                }
+            }
+            else
+            {
+                var updated = await _orderRepo.UpdateAsync(order);
+                return MapToDto(updated);
+            }
         }
 
         public async Task<OrderDto> CancelOrderAsync(Guid orderId, Guid userId)
         {
             var order = await _orderRepo.GetByIdAsync(orderId)
                 ?? throw new NotFoundException($"Order {orderId} not found.");
-            if (order.UserId != userId) throw new UnauthorizedException("Access denied.");
+            if (order.UserId != userId) throw new ForbiddenException("Access denied.");
             if (order.Status != OrderStatus.PENDING)
                 throw new BadRequestException("Only PENDING orders can be cancelled.");
+
             order.Status = OrderStatus.CANCELLED;
-            var updated = await _orderRepo.UpdateAsync(order);
-            return MapToDto(updated);
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                foreach (var item in order.OrderItems!)
+                    await _inventoryService.ReleaseStockAsync(item.ProductVariantId, item.Quantity, order.Id.ToString());
+                
+                var updated = await _orderRepo.UpdateAsync(order);
+                await _unitOfWork.CommitTransactionAsync();
+                return MapToDto(updated);
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
         }
 
         private static OrderDto MapToDto(Order o) => new()
@@ -167,3 +242,6 @@ namespace Florist.Application.Services
         };
     }
 }
+
+
+

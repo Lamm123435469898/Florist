@@ -12,7 +12,13 @@ namespace Florist.Application.Services
     public class ReviewService : IReviewService
     {
         private readonly IReviewRepository _reviewRepo;
-        public ReviewService(IReviewRepository reviewRepo) => _reviewRepo = reviewRepo;
+        private readonly IOrderRepository _orderRepo;
+
+        public ReviewService(IReviewRepository reviewRepo, IOrderRepository orderRepo)
+        {
+            _reviewRepo = reviewRepo;
+            _orderRepo = orderRepo;
+        }
 
         public async Task<PagedResult<ReviewDto>> GetProductReviewsAsync(Guid productId, int page, int pageSize) =>
             await _reviewRepo.GetByProductIdAsync(productId, page, pageSize);
@@ -20,8 +26,13 @@ namespace Florist.Application.Services
         public async Task<ReviewDto> AddReviewAsync(Guid userId, CreateReviewRequest request)
         {
             if (request.Rating < 1 || request.Rating > 5) throw new BadRequestException("Rating must be 1-5.");
+            
+            var hasPurchased = await _orderRepo.HasUserPurchasedProductAsync(userId, request.ProductId);
+            if (!hasPurchased)
+                throw new ForbiddenException("You can only review products you have purchased and received.");
+                
             if (await _reviewRepo.HasUserReviewedProductAsync(userId, request.ProductId))
-                throw new BadRequestException("You have already reviewed this product.");
+                throw new ConflictException("You have already reviewed this product.");
 
             var review = new Review
             {
@@ -33,3 +44,4 @@ namespace Florist.Application.Services
         }
     }
 }
+

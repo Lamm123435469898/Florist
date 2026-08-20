@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, ArrowLeft, Heart, Package, Shield, Truck } from "lucide-react";
 import { AnimatedNavbar } from "@/components/animated-navbar";
@@ -11,6 +11,7 @@ import { useCart } from "@/contexts/cart-context";
 
 interface Product {
   id: string;
+  variant_id?: string;
   name: string;
   description: string | null;
   price: number;
@@ -34,18 +35,31 @@ const ProductDetail = () => {
 
   const fetchProduct = async (productId: string) => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .eq("id", productId)
-      .single();
-
-    if (error) {
+    try {
+      const { data } = await apiClient.get(`/products/${productId}`);
+      
+      if (data.success && data.data) {
+        const item = data.data;
+        const mappedProduct: Product = {
+          id: item.id,
+          variant_id: item.variants?.[0]?.id,
+          name: item.name,
+          description: item.description,
+          price: item.variants?.[0]?.price || 0,
+          image_url: item.images?.find((img: any) => img.isPrimary)?.imageUrl || item.images?.[0]?.imageUrl || null,
+          category: item.categoryName,
+          stock: item.variants?.[0]?.stock || 0
+        };
+        setProduct(mappedProduct);
+      } else {
+        setProduct(null);
+      }
+    } catch (error) {
       console.error("Error fetching product:", error);
-    } else {
-      setProduct(data);
+      setProduct(null);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   if (loading) {
@@ -173,7 +187,7 @@ const ProductDetail = () => {
                   <Button
                     size="lg"
                     className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-none h-14 text-base tracking-wide flex items-center justify-center gap-2"
-                    onClick={() => addItem(product.id, quantity)}
+                    onClick={() => addItem(product.variant_id || product.id, quantity)}
                   >
                     <ShoppingBag className="h-5 w-5" />
                     Thêm vào giỏ

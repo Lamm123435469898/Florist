@@ -13,8 +13,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using Serilog;
+using AspNetCoreRateLimit;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog
+builder.Host.UseSerilog((context, configuration) =>
+    configuration.ReadFrom.Configuration(context.Configuration));
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -22,7 +28,27 @@ builder.Services.AddControllers();
 // Fluent Validation
 builder.Services.AddValidatorsFromAssembly(typeof(Florist.Application.Validators.Auth.RegisterRequestValidator).Assembly);
 
+// CORS
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DefaultCorsPolicy", policy =>
+    {
+        policy.WithOrigins(corsOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
+// Rate Limiting
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.AddInMemoryRateLimiting();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHealthChecks().AddSqlServer(builder.Configuration.GetConnectionString("DefaultConnection") ?? "");
 
 // Swagger with JWT Auth
 builder.Services.AddSwaggerGen(c =>
@@ -82,6 +108,23 @@ builder.Services.AddScoped<IVoucherService, VoucherService>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IDashboardService, Florist.Infrastructure.Services.DashboardService>();
+
+// Dependency Injection - Additional (Inventory, Payment, Wishlist)
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddHostedService<Florist.Infrastructure.BackgroundJobs.OrderCleanupBackgroundService>();
+builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
+builder.Services.AddScoped<IWishlistService, WishlistService>();
+
+// Dependency Injection - AuthZ and Audit
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, Florist.API.Services.CurrentUserService>();
+builder.Services.AddScoped<Florist.Application.Interfaces.Services.IAuditLogService, Florist.Infrastructure.Services.AuditLogService>();
+builder.Services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationPolicyProvider, Florist.API.Authorization.PermissionPolicyProvider>();
+builder.Services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, Florist.API.Authorization.PermissionAuthorizationHandler>();
 
 // Configure JWT Settings
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
@@ -105,8 +148,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
+// Seed Data
+using (var scope = app.Services.CreateScope())
+{
+    await Florist.Infrastructure.Data.DataSeeder.SeedAsync(scope.ServiceProvider);
+}
+
 // Use Global Exception Middleware
 app.UseMiddleware<GlobalExceptionMiddleware>();
+
+// Use Idempotency Middleware
+app.UseMiddleware<IdempotencyMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -115,11 +167,20 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseSerilogRequestLogging();
+
+app.UseIpRateLimiting();
+
+app.UseCors("DefaultCorsPolicy");
+
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.Run();
+
+

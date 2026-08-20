@@ -46,6 +46,15 @@ namespace Florist.API.Middlewares
                 case UnauthorizedException:
                     context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                     break;
+                case ForbiddenException:
+                    context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                    break;
+                case ConflictException:
+                    context.Response.StatusCode = (int)HttpStatusCode.Conflict;
+                    break;
+                case BusinessRuleException:
+                    context.Response.StatusCode = (int)HttpStatusCode.UnprocessableEntity;
+                    break;
                 default:
                     context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                     response.Message = "An internal server error occurred.";

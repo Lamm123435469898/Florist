@@ -13,6 +13,8 @@ namespace Florist.Application.Interfaces.Repositories
         Task<Order?> GetByIdAsync(Guid id);
         Task<Order> CreateAsync(Order order);
         Task<Order> UpdateAsync(Order order);
+        Task<bool> HasUserPurchasedProductAsync(Guid userId, Guid productId);
+        Task<List<Order>> GetAbandonedOrdersAsync(DateTime cutoffTime);
     }
     public interface IVoucherRepository
     {
@@ -21,3 +23,4 @@ namespace Florist.Application.Interfaces.Repositories
         Task MarkUsedAsync(Guid voucherId, Guid userId, Guid orderId);
     }
 }
+

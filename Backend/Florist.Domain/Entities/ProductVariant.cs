@@ -12,6 +12,9 @@ namespace Florist.Domain.Entities
         public string? Size { get; set; }
         public string? Color { get; set; }
         public bool IsActive { get; set; } = true;
+
+        [System.ComponentModel.DataAnnotations.Timestamp]
+        public byte[]? RowVersion { get; set; }
         
         public Guid ProductId { get; set; }
         public Product? Product { get; set; }
@@ -20,3 +23,4 @@ namespace Florist.Domain.Entities
         public ICollection<InventoryTransaction> InventoryTransactions { get; set; } = new List<InventoryTransaction>();
     }
 }
+

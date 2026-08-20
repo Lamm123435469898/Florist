@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/contexts/cart-context";
 import { useAuth } from "@/contexts/auth-context";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
@@ -54,45 +54,27 @@ export default function Checkout() {
     setLoading(true);
 
     try {
-      const { data: orderData, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          user_id: user.id,
-          customer_name: formData.name,
-          customer_email: formData.email,
-          customer_phone: formData.phone,
-          shipping_address: formData.address,
-          total_amount: totalPrice,
-          status: "pending",
-        })
-        .select()
-        .single();
+      const { data } = await apiClient.post("/orders", {
+        customerName: formData.name,
+        customerEmail: formData.email,
+        customerPhone: formData.phone,
+        shippingAddress: formData.address,
+        paymentMethod: "COD"
+      });
 
-      if (orderError) throw orderError;
-
-      const orderItems = items.map((item) => ({
-        order_id: orderData.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.products?.price || 0,
-      }));
-
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
-
-      if (itemsError) {
-        console.error("Lỗi thêm chi tiết đơn hàng:", itemsError);
+      if (data.success) {
+        // Our backend API probably clears the cart automatically upon order creation.
+        // We will just fetch cart items again to clear the local state, or clearCart locally.
+        await clearCart(); 
+        navigate(`/order-success?id=${data.data.id}`);
+      } else {
+        throw new Error(data.message || "Failed to place order");
       }
-
-      await clearCart();
-      navigate(`/order-success?id=${orderData.id}`);
-
     } catch (error: any) {
       console.error("Lỗi đặt hàng:", error);
       toast({
         title: "Lỗi",
-        description: error.message || "Đã có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.",
+        description: error.response?.data?.message || error.message || "Đã có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.",
         variant: "destructive",
       });
     } finally {

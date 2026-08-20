@@ -1,5 +1,5 @@
-using System.Threading.Tasks;
 using Florist.Application.DTOs.Auth;
+using System.Threading.Tasks;
 
 namespace Florist.Application.Interfaces.Auth
 {
@@ -7,5 +7,7 @@ namespace Florist.Application.Interfaces.Auth
     {
         Task<AuthResponse> RegisterAsync(RegisterRequest request);
         Task<AuthResponse> LoginAsync(LoginRequest request);
+        Task<AuthResponse> RefreshTokenAsync(RefreshTokenRequest request);
+        Task LogoutAsync(LogoutRequest request);
     }
 }

@@ -57,6 +57,24 @@ namespace Florist.Infrastructure.Repositories
 
         public async Task<Order> CreateAsync(Order order) { _context.Orders.Add(order); await _context.SaveChangesAsync(); return order; }
         public async Task<Order> UpdateAsync(Order order) { _context.Orders.Update(order); await _context.SaveChangesAsync(); return order; }
+
+        public async Task<bool> HasUserPurchasedProductAsync(Guid userId, Guid productId)
+        {
+            return await _context.Orders
+                .Include(o => o.OrderItems)
+                .AnyAsync(o => o.UserId == userId 
+                            && o.Status == OrderStatus.DELIVERED 
+                            && o.OrderItems != null 
+                            && o.OrderItems.Any(i => i.ProductId == productId));
+        }
+
+        public async Task<List<Order>> GetAbandonedOrdersAsync(DateTime cutoffTime)
+        {
+            return await _context.Orders
+                .Include(o => o.OrderItems)
+                .Where(o => o.Status == OrderStatus.PENDING && o.CreatedAt <= cutoffTime)
+                .ToListAsync();
+        }
     }
 
     public class VoucherRepository : IVoucherRepository
@@ -88,3 +106,4 @@ namespace Florist.Infrastructure.Repositories
         }
     }
 }
+

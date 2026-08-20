@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { apiClient } from "@/lib/api-client";
 import { AnimatedProductCard } from "@/components/ui/animated-card";
 import { AnimatedNavbar } from "@/components/animated-navbar";
 import { AnimatedFooter } from "@/components/animated-footer";
@@ -29,24 +29,24 @@ const Products = () => {
   useEffect(() => {
     fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory]);
+  }, []); // Only fetch once, we will filter locally for now to match previous behavior
 
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      let query = supabase.from("products").select("*");
-
-      if (selectedCategory !== "all") {
-        query = query.eq("category", selectedCategory);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error fetching products:", error);
-        setProducts([]);
+      const { data } = await apiClient.get("/products?pageSize=100");
+      if (data.success && data.data?.items) {
+        const mappedProducts = data.data.items.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          price: item.variants?.[0]?.price || 0,
+          image_url: item.images?.find((img: any) => img.isPrimary)?.imageUrl || item.images?.[0]?.imageUrl || null,
+          category: item.categoryName
+        }));
+        setProducts(mappedProducts);
       } else {
-        setProducts(data || []);
+        setProducts([]);
       }
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -58,17 +58,25 @@ const Products = () => {
 
   const categories = ["all", "Khung Hoa Khô", "Khung Hoa Tươi", "Quà Tặng", "Custom Design"];
 
-  const sortedProducts = [...products].sort((a, b) => {
+  // Filter first
+  const categoryFiltered = selectedCategory === "all" 
+    ? products 
+    : products.filter(p => p.category === selectedCategory);
+
+  const searchFiltered = categoryFiltered.filter(product =>
+    (product.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  // Then sort
+  const sortedProducts = [...searchFiltered].sort((a, b) => {
     if (sortBy === "price-low") return (a.price || 0) - (b.price || 0);
     if (sortBy === "price-high") return (b.price || 0) - (a.price || 0);
     if (sortBy === "name") return (a.name || "").localeCompare(b.name || "");
     return 0;
   });
 
-  const filteredProducts = sortedProducts.filter(product =>
-    (product.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredProducts = sortedProducts;
 
   useEffect(() => {
     setIsFiltering(true);
