@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Florist.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c386cc93ca8138f9eaccabc565125e8d748edb2d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+53702c2d8a8a874ee5d32fdcf70689ca0eda8e07")]
 [assembly: System.Reflection.AssemblyProductAttribute("Florist.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Florist.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

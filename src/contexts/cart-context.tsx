@@ -15,6 +15,7 @@ interface CartItem {
     price: number;
     image_url: string | null;
     stock: number | null;
+    category?: string | null;
   } | null;
 }
 
@@ -59,7 +60,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         name: item.productName,
         price: item.price,
         image_url: item.imageUrl,
-        stock: 100 // Default stock if not provided
+        stock: 100, // Default stock if not provided
+        category: item.categoryName
       }
     }));
   };

@@ -48,7 +48,7 @@ builder.Services.AddInMemoryRateLimiting();
 builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddHealthChecks().AddSqlServer(builder.Configuration.GetConnectionString("DefaultConnection") ?? "");
+builder.Services.AddHealthChecks().AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection") ?? "");
 
 // Swagger with JWT Auth
 builder.Services.AddSwaggerGen(c =>
@@ -80,7 +80,7 @@ builder.Services.AddSwaggerGen(c =>
 
 // Configure DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Dependency Injection - Auth
 builder.Services.AddScoped<IUserRepository, UserRepository>();

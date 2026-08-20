@@ -102,9 +102,6 @@ const Cart = () => {
                         <h3 className="font-serif font-bold text-lg text-foreground mb-1">
                           {item.products?.name}
                         </h3>
-                        <p className="text-sm text-foreground/50 mb-4">
-                          {item.products?.category}
-                        </p>
                       </div>
                       <button
                         className="text-foreground/40 hover:text-destructive transition-colors p-2"
