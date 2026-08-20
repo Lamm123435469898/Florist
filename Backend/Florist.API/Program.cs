@@ -151,24 +151,26 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
-// Manual CORS middleware - handles preflight before anything else can interfere
+// Manual CORS middleware - bulletproof
 app.Use(async (context, next) =>
 {
-    var origin = context.Request.Headers["Origin"].ToString();
-    var allowedOrigins = new[] {
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:8080",
-        "https://floristhcm.netlify.app"
-    };
-
-    if (!string.IsNullOrEmpty(origin) && allowedOrigins.Contains(origin))
+    context.Response.OnStarting(() =>
     {
-        context.Response.Headers.Append("Access-Control-Allow-Origin", origin);
-        context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
-        context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Idempotency-Key");
-        context.Response.Headers.Append("Access-Control-Allow-Credentials", "true");
-    }
+        var origin = context.Request.Headers["Origin"].ToString();
+        if (!string.IsNullOrEmpty(origin))
+        {
+            context.Response.Headers.Remove("Access-Control-Allow-Origin");
+            context.Response.Headers.Remove("Access-Control-Allow-Methods");
+            context.Response.Headers.Remove("Access-Control-Allow-Headers");
+            context.Response.Headers.Remove("Access-Control-Allow-Credentials");
+
+            context.Response.Headers.Append("Access-Control-Allow-Origin", origin);
+            context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+            context.Response.Headers.Append("Access-Control-Allow-Headers", "*");
+            context.Response.Headers.Append("Access-Control-Allow-Credentials", "true");
+        }
+        return Task.CompletedTask;
+    });
 
     if (context.Request.Method == "OPTIONS")
     {
