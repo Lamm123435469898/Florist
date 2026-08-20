@@ -19,7 +19,7 @@ namespace Florist.API.Controllers
         private readonly IWishlistService _wishlistService;
         public WishlistController(IWishlistService wishlistService) => _wishlistService = wishlistService;
 
-        private Guid GetUserId() => Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        private Guid GetUserId() => Guid.Parse(User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)!);
 
         [HttpGet]
         public async Task<IActionResult> GetWishlist()

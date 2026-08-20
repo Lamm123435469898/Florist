@@ -17,7 +17,7 @@ namespace Florist.API.Controllers
         private readonly ICartService _cartService;
         public CartController(ICartService cartService) => _cartService = cartService;
 
-        private Guid GetUserId() => Guid.Parse(User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)!);
+        private Guid GetUserId() => Guid.Parse(User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)!);
 
         [HttpGet]
         public async Task<IActionResult> GetCart()

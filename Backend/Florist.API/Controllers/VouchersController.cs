@@ -17,7 +17,7 @@ namespace Florist.API.Controllers
         private readonly IVoucherService _voucherService;
         public VouchersController(IVoucherService voucherService) => _voucherService = voucherService;
 
-        private Guid GetUserId() => Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        private Guid GetUserId() => Guid.Parse(User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)!);
 
         [HttpPost("validate")]
         [Authorize]

@@ -19,7 +19,7 @@ namespace Florist.API.Controllers
         private readonly IOrderService _orderService;
         public OrdersController(IOrderService orderService) => _orderService = orderService;
 
-        private Guid GetUserId() => Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        private Guid GetUserId() => Guid.Parse(User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)!);
 
         [HttpPost]
         public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)

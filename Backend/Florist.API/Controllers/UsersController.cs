@@ -18,7 +18,7 @@ namespace Florist.API.Controllers
         private readonly IUserService _userService;
         public UsersController(IUserService userService) => _userService = userService;
 
-        private Guid GetUserId() => Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        private Guid GetUserId() => Guid.Parse(User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)!);
 
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()

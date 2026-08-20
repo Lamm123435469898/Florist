@@ -20,7 +20,7 @@ namespace Florist.API.Controllers
         [Authorize]
         public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentRequest request)
         {
-            var userId = Guid.Parse(User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)!);
+            var userId = Guid.Parse(User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)!);
             var result = await _paymentService.CreatePaymentAsync(userId, request);
             return Ok(BaseResponse<PaymentResultDto>.Ok(result));
         }

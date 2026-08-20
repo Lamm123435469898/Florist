@@ -18,7 +18,7 @@ namespace Florist.API.Controllers
         private readonly IReviewService _reviewService;
         public ReviewsController(IReviewService reviewService) => _reviewService = reviewService;
 
-        private Guid GetUserId() => Guid.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        private Guid GetUserId() => Guid.Parse(User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)!);
 
         [HttpGet("product/{productId:guid}")]
         public async Task<IActionResult> GetProductReviews(Guid productId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
