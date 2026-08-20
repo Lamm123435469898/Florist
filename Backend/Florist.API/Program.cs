@@ -148,6 +148,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
+app.UseCors("DefaultCorsPolicy");
+
 // Seed Data
 using (var scope = app.Services.CreateScope())
 {
@@ -180,8 +182,6 @@ if (app.Environment.IsDevelopment())
 app.UseSerilogRequestLogging();
 
 app.UseIpRateLimiting();
-
-app.UseCors("DefaultCorsPolicy");
 
 app.UseHttpsRedirection();
 
