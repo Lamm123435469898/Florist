@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-// The ASP.NET Core API usually runs on localhost:5033 or 7168 in development
-// For this environment, we'll assume it's running on port 5033.
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5033/api';
+// The ASP.NET Core API usually runs on localhost:5235 (HTTP) or 7080 (HTTPS) in development
+// For this environment, we'll assume it's running on HTTP port 5235.
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5235/api';
 
 export const apiClient = axios.create({
   baseURL: API_URL,
