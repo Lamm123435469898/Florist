@@ -28,13 +28,16 @@ builder.Services.AddControllers();
 // Fluent Validation
 builder.Services.AddValidatorsFromAssembly(typeof(Florist.Application.Validators.Auth.RegisterRequestValidator).Assembly);
 
-// CORS
-var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+// CORS - Hardcode allowed origins for reliability across all hosting platforms
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("DefaultCorsPolicy", policy =>
     {
-        policy.WithOrigins(corsOrigins)
+        policy.WithOrigins(
+                  "http://localhost:3000",
+                  "http://localhost:5173",
+                  "http://localhost:8080",
+                  "https://floristhcm.netlify.app")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -183,7 +186,7 @@ app.UseSerilogRequestLogging();
 
 app.UseIpRateLimiting();
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Not needed - Back4app/cloud platforms handle HTTPS at the edge
 
 app.UseAuthentication();
 app.UseAuthorization();
