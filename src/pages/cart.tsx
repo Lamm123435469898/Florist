@@ -117,8 +117,9 @@ const Cart = () => {
                     <div className="flex items-center justify-between mt-auto">
                       <div className="flex items-center border border-border rounded-sm">
                         <button
-                          className="w-8 h-8 flex items-center justify-center text-foreground/60 hover:text-primary transition-colors"
+                          className="w-8 h-8 flex items-center justify-center text-foreground/60 hover:text-primary transition-colors disabled:opacity-50"
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          disabled={loading}
                         >
                           <Minus className="h-3 w-3" />
                         </button>
@@ -126,8 +127,9 @@ const Cart = () => {
                           {item.quantity}
                         </span>
                         <button
-                          className="w-8 h-8 flex items-center justify-center text-foreground/60 hover:text-primary transition-colors"
+                          className="w-8 h-8 flex items-center justify-center text-foreground/60 hover:text-primary transition-colors disabled:opacity-50"
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          disabled={loading}
                         >
                           <Plus className="h-3 w-3" />
                         </button>

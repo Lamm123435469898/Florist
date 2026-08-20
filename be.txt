@@ -1,1011 +1,598 @@
-# FRONTEND SECURITY AUDIT — PHASE 5
+# PHASE 6 — FRONTEND UI/UX DESIGN & DESIGN SYSTEM
 
-You are continuing a security audit of an ecommerce application.
+## Context
 
-The backend security baseline has already passed the final security gate.
+Backend Security: PASS
+Frontend Architecture/Migration: PASS
+Supabase: COMPLETELY REMOVED
 
-Completed backend phases:
+Current architecture:
 
-* CRITICAL #1 — Payment Webhook Security
-* CRITICAL #2 — Inventory / Checkout Concurrency
-* HIGH #1 — Authorization / IDOR
-* PHASE 3 — Admin Authorization / Permission Bypass
-* PHASE 4 — Price Manipulation / Business Logic Integrity
-* Quick Backend Security Gate — PASS
+Browser → ASP.NET Core API → Database
 
-The backend is now considered security-baseline complete.
+The following security controls are already implemented and MUST NOT be broken:
 
-Your task is:
+- Authentication
+- JWT authorization
+- Admin authorization
+- Permission enforcement
+- IDOR protection
+- Server-side price calculation
+- Payment integrity
+- Inventory concurrency
+- Transaction atomicity
+- Backend business rules
 
-# PHASE 5 — FRONTEND SECURITY AUDIT
+Security hardening items classified as LOW/DEFERRED are intentionally postponed.
 
-==================================================
-IMPORTANT SCOPE
-===============
+DO NOT spend this phase fixing:
 
-This task is ONLY for frontend security.
+- JWT localStorage → HttpOnly cookies
+- E2E automation
+- CSP hardening
+- dependency upgrades
+- production security headers
+- other LOW/DEFERRED security findings
 
-Do NOT:
-
-* Modify backend code.
-* Re-open completed backend security phases.
-* Perform backend refactoring.
-* Change backend API contracts unless absolutely required to fix a frontend integration issue.
-* Start deployment hardening.
-* Start performance optimization unless it creates a security issue.
-* Automatically proceed to another phase.
-
-First:
-
-AUDIT → IDENTIFY → CLASSIFY → PLAN
-
-Then:
-
-FIX → TEST → VERIFY → REPORT
-
-Do NOT modify code before understanding the frontend architecture.
+Focus ONLY on FRONTEND DESIGN, UX, DESIGN SYSTEM and UI IMPLEMENTATION.
 
 ==================================================
-PHASE 1 — DISCOVER FRONTEND ARCHITECTURE
-========================================
+1. AUDIT CURRENT FRONTEND
+==================================================
 
-First inspect the frontend project.
+Before changing UI, inspect the existing frontend:
 
-Determine:
+- React structure
+- routing
+- pages
+- components
+- layouts
+- forms
+- authentication screens
+- product pages
+- cart
+- checkout
+- order history
+- admin dashboard
+- admin product management
+- admin order management
+- loading states
+- error states
+- empty states
 
-* Framework
-* Build system
-* Package manager
-* Routing system
-* State management
-* HTTP/API client
-* Authentication implementation
-* Token storage
-* User/session state
-* Permission/role handling
-* Form validation
-* File upload handling
-* Payment integration
-* Error handling
-* Environment configuration
+Do not rewrite working API integration.
 
 Identify:
 
-* src/
-* components/
-* pages/
-* routes/
-* services/
-* api/
-* hooks/
-* stores/
-* contexts/
-* utils/
-* auth/
-* payment/
-* admin/
-* checkout/
-
-Also inspect:
-
-* package.json
-* lock file
-* environment files
-* build configuration
-* TypeScript configuration if applicable
-* framework configuration
-* API client configuration
-
-DO NOT modify anything during this discovery phase.
+- reusable components
+- duplicated UI
+- inconsistent styling
+- layout problems
+- responsive issues
+- accessibility issues
+- UX friction
 
 ==================================================
-PHASE 2 — AUTHENTICATION SECURITY
-=================================
+2. DEFINE DESIGN DIRECTION
+==================================================
 
-Audit how authentication tokens are stored and handled.
+Create a coherent visual direction for the entire ecommerce application.
 
-Search for:
+Define:
 
-* localStorage
-* sessionStorage
-* cookies
-* document.cookie
-* Authorization
-* Bearer
-* accessToken
-* refreshToken
-* JWT
-* token
-* credentials
-* auth headers
+### Brand
 
-Determine:
+- visual personality
+- brand tone
+- design principles
+- visual hierarchy
 
-1. Where access tokens are stored.
-2. Where refresh tokens are stored.
-3. Whether tokens are accessible to JavaScript.
-4. Whether tokens are persisted unnecessarily.
-5. Whether logout actually removes session credentials.
-6. Whether expired tokens are handled correctly.
-7. Whether refresh token rotation is handled safely.
-8. Whether tokens are accidentally logged.
-9. Whether tokens appear in URLs.
-10. Whether tokens are included in analytics/error reporting.
+### Typography
 
-Pay particular attention to:
+Define:
 
-```text
-localStorage.setItem("token", ...)
-localStorage.setItem("accessToken", ...)
-localStorage.setItem("refreshToken", ...)
-```
+- primary font
+- fallback fonts
+- heading hierarchy
+- body text
+- labels
+- captions
+- buttons
+- numeric/price typography
 
-Do NOT automatically declare localStorage a vulnerability without understanding the application's architecture and threat model.
+Avoid excessive font families.
 
-If a more secure HttpOnly/Secure/SameSite cookie architecture is already supported by the backend, document whether migration is appropriate.
+### Color System
 
-Never expose:
+Define semantic tokens:
 
-* JWT
-* refresh token
-* payment secret
-* API secret
-* private key
+- primary
+- secondary
+- accent
+- background
+- surface
+- foreground
+- muted
+- border
+- success
+- warning
+- destructive
+- info
 
-in frontend source.
+Include accessible contrast.
+
+### Spacing
+
+Define a consistent spacing scale.
+
+### Radius
+
+Define:
+
+- buttons
+- cards
+- inputs
+- modals
+- badges
+
+### Shadows
+
+Use a consistent elevation system.
 
 ==================================================
-PHASE 3 — XSS AUDIT
-===================
+3. DESIGN SYSTEM
 
-Audit all user-controlled data rendered into HTML.
-
-Search for:
-
-* dangerouslySetInnerHTML
-* innerHTML
-* outerHTML
-* insertAdjacentHTML
-* eval
-* Function(...)
-* document.write
-* v-html
-* HTML injection libraries
-* markdown renderers
-* rich text editors
-* URL-based rendering
-* DOM manipulation
-
-Identify user-controlled inputs such as:
-
-* Product name
-* Product description
-* Review
-* Comment
-* User profile
-* Address
-* Coupon
-* Search query
-* URL query parameters
-* Error messages
-* Admin-entered content
-
-Test payload:
-
-```html
-<script>alert(document.domain)</script>
-```
-
-Also test:
-
-```html
-<img src=x onerror=alert(document.domain)>
-```
-
-and:
-
-```html
-<svg onload=alert(document.domain)>
-```
-
-Expected:
-
-* Payload is rendered as text OR safely sanitized.
-* JavaScript MUST NOT execute.
-
-If HTML rendering is genuinely required:
-
-* Use a maintained sanitizer.
-* Sanitize at the correct trust boundary.
-* Do not implement an ad-hoc regex sanitizer.
-
-==================================================
-PHASE 4 — DOM / URL-BASED XSS
-=============================
-
-Audit data originating from:
-
-* window.location
-* location.search
-* location.hash
-* route parameters
-* query parameters
-* redirect URLs
-* postMessage
-* localStorage
-* sessionStorage
-
-Check whether these values are inserted into:
-
-* HTML
-* DOM
-* URLs
-* script contexts
-* event handlers
-
-Test malicious URLs such as:
-
-```text
-?search=<img src=x onerror=alert(1)>
-```
-
-and:
-
-```text
-?redirect=javascript:alert(1)
-```
-
-Never allow attacker-controlled redirect destinations without validation.
-
-==================================================
-PHASE 5 — ROUTE GUARDS / AUTHORIZATION UX
-=========================================
-
-Audit:
-
-* Protected routes
-* Admin routes
-* User routes
-* Guest routes
-* Role checks
-* Permission checks
-* Route redirects
+Create reusable UI primitives.
 
 Examples:
 
-```text
-/admin
-/admin/users
-/admin/products
-/admin/orders
-/account
-/orders
-/checkout
-```
+- Button
+- Input
+- Select
+- Checkbox
+- Radio
+- Textarea
+- Badge
+- Card
+- Modal
+- Dialog
+- Drawer
+- Dropdown
+- Tabs
+- Tooltip
+- Toast
+- Alert
+- Skeleton
+- Spinner
+- Pagination
+- Breadcrumb
+- Avatar
+- ProductCard
+- PriceDisplay
+- EmptyState
+- ErrorState
 
-Verify:
+Do not duplicate components unnecessarily.
 
-* Unauthenticated users cannot access protected UI.
-* Non-admin users cannot access admin UI.
-* Users cannot bypass guards by directly entering URLs.
-* Expired sessions redirect appropriately.
-* Logout invalidates frontend auth state.
-
-IMPORTANT:
-
-Frontend route guards are NOT a security boundary.
-
-The backend remains authoritative.
-
-Do not weaken backend authorization simply to make frontend routing work.
-
-==================================================
-PHASE 6 — CLIENT-SIDE BUSINESS LOGIC
-====================================
-
-Audit whether frontend calculations can incorrectly influence authoritative backend state.
-
-Inspect:
-
-* Product price
-* Cart price
-* Quantity
-* Discount
-* Coupon
-* Shipping
-* Tax
-* Order total
-* Payment amount
-
-The frontend may calculate values for display, but the backend must remain authoritative.
-
-Check requests such as:
-
-```json
-{
-  "productVariantId": "...",
-  "quantity": 1,
-  "price": 1,
-  "total": 1,
-  "discount": 999999
-}
-```
-
-If frontend sends fields that the backend ignores, this is not automatically a vulnerability.
-
-Determine whether:
-
-1. The field is actually used by backend.
-2. The field can create inconsistent UI.
-3. The field can mislead users.
-4. The frontend incorrectly assumes client-calculated values are authoritative.
-
-Do not duplicate backend business logic unnecessarily.
+Prefer the existing component library if one already exists.
 
 ==================================================
-PHASE 7 — PAYMENT FRONTEND SECURITY
-===================================
+4. CUSTOMER EXPERIENCE
+==================================================
 
-Audit all payment-related frontend code.
+Design the complete customer journey:
 
-Search for:
+Home
+→ Products
+→ Product Detail
+→ Add to Cart
+→ Cart
+→ Checkout
+→ Payment
+→ Order Success
+→ Order History
+→ Order Detail
 
-* VNPay
-* MoMo
-* paymentUrl
-* paymentAmount
-* amount
-* orderId
-* callback
-* returnUrl
-* redirect
-* payment status
+Every page must have:
 
-Verify:
-
-1. Payment URL is received from trusted backend response.
-2. Frontend does not construct payment URLs using secrets.
-3. Frontend does not expose payment API secrets.
-4. Frontend does not decide payment success solely from client state.
-5. Frontend does not mark an order as paid locally.
-6. Payment status is ultimately obtained from backend.
-7. Return/callback query parameters are not blindly trusted.
-8. Redirect URLs cannot be manipulated into open redirects.
-
-A frontend route like:
-
-```text
-/payment/success
-```
-
-must NOT assume:
-
-```text
-?status=success
-```
-
-means the payment is actually successful.
-
-The backend remains the source of truth.
+- loading state
+- empty state where appropriate
+- error state
+- success feedback
+- responsive layout
 
 ==================================================
-PHASE 8 — SENSITIVE DATA EXPOSURE
-=================================
+5. HOMEPAGE
 
-Search for secrets and sensitive data in:
+Design a polished ecommerce homepage.
 
-* source code
-* .env files
-* public configuration
-* build artifacts
-* console.log
-* console.error
-* analytics
-* error reporting
-* Redux/state stores
-* browser storage
+Possible structure:
 
-Search patterns:
+- Header
+- Navigation
+- Hero section
+- Featured products
+- Categories
+- Promotional section
+- Benefits / trust section
+- Newsletter if appropriate
+- Footer
 
-```text
-API_KEY
-SECRET
-PRIVATE_KEY
-PASSWORD
-TOKEN
-JWT
-CLIENT_SECRET
-DATABASE
-CONNECTION_STRING
-```
+Do not add unnecessary sections simply for visual complexity.
 
-Frontend environment variables are NOT automatically secret.
-
-Anything bundled into a browser application should be considered public.
-
-Verify no frontend bundle contains:
-
-* Payment provider secret
-* JWT signing secret
-* Database credentials
-* Admin secret
-* Private API key
-* Internal service credentials
+Focus on conversion and clarity.
 
 ==================================================
-PHASE 9 — LOGGING / ERROR HANDLING
-==================================
+6. PRODUCT EXPERIENCE
 
-Audit:
+Design:
 
-* console.log
-* console.error
-* debug logs
-* API error messages
-* stack traces
-* server response display
-* toast notifications
-* error boundaries
+### Product listing
 
-Do not expose:
+- filters
+- sorting
+- pagination
+- product cards
+- price
+- stock state
+- sale state
+- loading skeleton
 
-* JWT
-* access token
-* refresh token
-* passwords
-* payment secrets
-* database errors
-* internal stack traces
+### Product detail
 
-Example of unsafe behavior:
+- image gallery
+- product information
+- price
+- variant selection
+- quantity selector
+- stock state
+- add-to-cart
+- related products
 
-```javascript
-console.log("Auth response:", response);
-```
+Do not allow frontend price calculations to become authoritative.
 
-if response contains tokens.
-
-Check whether sensitive errors are shown directly to users.
+Frontend price display is presentation only.
 
 ==================================================
-PHASE 10 — INPUT VALIDATION
-===========================
+7. CART
 
-Audit all user input:
+Design:
 
-* Login
-* Registration
-* Search
-* Address
-* Checkout
-* Coupon
-* Review
-* Profile
-* Password
-* File upload
+- cart item
+- quantity controls
+- remove item
+- subtotal
+- discount
+- shipping
+- total
+- empty cart
 
-Verify:
+UX requirements:
 
-* Client-side validation exists where appropriate.
-* Maximum lengths are enforced for UX.
-* Unexpected input types are handled.
-* Empty/null values are handled.
-* Numeric values are validated.
-* Negative quantities are prevented in UI.
-* File types/sizes are validated.
-
-IMPORTANT:
-
-Frontend validation is for UX.
-
-Do NOT assume it replaces backend validation.
-
-Do NOT introduce validation that contradicts legitimate backend behavior without understanding the business rule.
+- clear feedback after update
+- disabled states while loading
+- optimistic UI only where safe
+- prevent confusing double submissions
 
 ==================================================
-PHASE 11 — FILE UPLOAD
-======================
+8. CHECKOUT
 
-If frontend supports file upload, audit:
+Design a clear multi-section checkout experience:
 
-* File type validation
-* File extension validation
-* MIME validation
-* Maximum file size
-* Multiple file upload
-* Preview rendering
-* Object URLs
-* SVG handling
-* Filename rendering
+- customer information
+- shipping address
+- voucher
+- payment method
+- order summary
+- confirmation
 
-Special attention:
+Important:
 
-SVG files can contain active content.
+The frontend must NOT become authoritative for:
 
-Do not blindly inject uploaded SVG/HTML into the DOM.
+- price
+- discount
+- inventory
+- payment amount
 
-Verify that uploaded content is treated according to the backend's upload/security model.
+Backend remains the source of truth.
 
 ==================================================
-PHASE 12 — OPEN REDIRECTS
-=========================
+9. AUTHENTICATION UI
 
-Search for:
+Design:
 
-* window.location
-* window.location.href
-* location.assign
-* location.replace
-* router.push
-* navigate()
-* redirect
-* returnUrl
-* callbackUrl
-* next
-* redirectUrl
+- Login
+- Register
+- Logout
+- loading states
+- validation errors
+- backend errors
+- session expiration handling
 
-Check whether attacker-controlled values can cause:
+Do not modify the authentication architecture.
 
-```text
-https://trusted-site.com/login?redirect=https://evil.example
-```
+==================================================
+10. USER ACCOUNT
 
-Expected:
+Design:
 
-* Only trusted internal paths are accepted.
-* External redirect destinations are explicitly allowlisted where necessary.
+- profile
+- orders
+- order detail
+- payment status
+- order status
+- logout
+
+Prioritize clarity over excessive dashboard complexity.
+
+==================================================
+11. ADMIN UI
+
+Create a separate professional admin experience.
+
+Design:
+
+### Admin Dashboard
+
+- revenue
+- orders
+- customers
+- products
+- inventory
+- recent orders
+- useful metrics
+
+### Product Management
+
+- product list
+- search
+- filters
+- create
+- edit
+- delete
+- stock
+- pricing
+- status
+
+### Order Management
+
+- order list
+- order detail
+- customer
+- payment
+- status
+- status update
+
+Admin UI should feel distinct from customer storefront while sharing the same design tokens.
+
+==================================================
+12. RESPONSIVE DESIGN
+
+Support:
+
+- mobile
+- tablet
+- desktop
+- large desktop
+
+Define breakpoints consistently.
+
+Do not merely shrink desktop UI.
+
+Mobile layouts should be intentionally designed.
 
 Test:
 
-```text
-?redirect=https://evil.example
-```
-
-Expected:
-
-* Redirect is rejected or normalized to a safe internal route.
-
-==================================================
-PHASE 13 — POSTMESSAGE / CROSS-WINDOW COMMUNICATION
-===================================================
-
-If the frontend uses:
-
-```javascript
-window.postMessage
-window.addEventListener("message", ...)
-```
-
-audit:
-
-* origin validation
-* message type validation
-* payload validation
-* trusted sender
-* sensitive data transmission
-
-Never use:
-
-```javascript
-if (event.data.status === "success") {
-    markPaymentComplete();
-}
-```
-
-without validating origin and backend payment state.
+- navigation
+- product grids
+- checkout
+- cart
+- admin tables
+- modals
+- forms
 
 ==================================================
-PHASE 14 — DEPENDENCY SECURITY
-==============================
+13. ACCESSIBILITY
 
-Inspect:
+Implement:
 
-* package.json
-* package-lock.json
-* yarn.lock
-* pnpm-lock.yaml
+- semantic HTML
+- keyboard navigation
+- visible focus states
+- accessible labels
+- appropriate aria attributes
+- sufficient color contrast
+- usable form validation
+- screen-reader-friendly states
 
-Run the project's appropriate dependency audit.
-
-For npm:
-
-```text
-npm audit
-```
-
-For yarn:
-
-```text
-yarn audit
-```
-
-For pnpm:
-
-```text
-pnpm audit
-```
-
-Use the package manager actually used by the project.
-
-Do NOT blindly upgrade every dependency.
-
-For each vulnerability determine:
-
-* Severity
-* Package
-* Direct/transitive
-* Exploitability
-* Whether the vulnerable package is used in production
-* Safe upgrade path
-* Potential breaking changes
-
-Only apply dependency changes that are necessary and safe.
+Do not use color alone to communicate state.
 
 ==================================================
-PHASE 15 — ENVIRONMENT / BUILD SECURITY
-=======================================
-
-Inspect:
-
-* .env
-* .env.local
-* .env.production
-* .env.example
-* build configuration
-
-Determine:
-
-* Which variables are public.
-* Which variables are secrets.
-* Whether production configuration leaks development endpoints.
-* Whether localhost URLs are used in production.
-* Whether debug mode is enabled.
-* Whether source maps expose sensitive information.
-* Whether API base URL is configurable safely.
-
-Remember:
-
-Frontend environment variables embedded in the bundle are PUBLIC.
-
-Never place secrets in them.
-
-==================================================
-PHASE 16 — API CLIENT SECURITY
-==============================
-
-Audit the HTTP client/interceptors.
-
-Check:
-
-* Authorization headers
-* Token refresh
-* Retry behavior
-* 401 handling
-* 403 handling
-* Error parsing
-* Request logging
-* Sensitive request logging
-* Duplicate requests
-* Credential handling
-
-Verify that a failed refresh does not create an infinite loop.
-
-Example:
-
-```text
-API → 401
-   ↓
-refresh token
-   ↓
-401
-   ↓
-refresh again
-   ↓
-infinite loop
-```
-
-Expected:
-
-* Refresh failure terminates the session safely.
-* User is redirected to login.
-* No infinite retry loop.
-
-==================================================
-PHASE 17 — SECURITY HEADERS / FRONTEND DEPLOYMENT CHECK
-=======================================================
-
-Inspect whether the frontend deployment has mechanisms for:
-
-* Content-Security-Policy
-* X-Content-Type-Options
-* Referrer-Policy
-* Frame protection
-* HTTPS
-* Secure cookies if applicable
-
-Do not modify server infrastructure unless the project explicitly includes frontend deployment configuration.
-
-If headers are controlled outside the repository:
-
-Document them as deployment findings.
-
-Do NOT block frontend application fixes on infrastructure changes.
-
-==================================================
-PHASE 18 — AUDIT BEFORE FIX
-===========================
-
-Before modifying code, produce a concise internal audit summary:
-
-For each finding:
-
-* Severity
-* File
-* Component/function
-* Vulnerable behavior
-* Exploitation scenario
-* Security impact
-* Recommended fix
-
-Classify:
-
-CRITICAL
-HIGH
-MEDIUM
-LOW
-INFO
-
-Do not fix purely stylistic or theoretical issues unless they have meaningful security impact.
-
-==================================================
-PHASE 19 — FIX
-==============
-
-After the audit:
-
-Implement minimal safe fixes.
-
-Priorities:
-
-1. Critical
-2. High
-3. Medium
-4. Low
-
-Do not introduce unnecessary architecture changes.
-
-Do not duplicate backend security logic.
-
-Do not move secrets into another frontend file and call it fixed.
-
-Do not solve XSS with fragile regex.
-
-Do not disable security controls to make tests pass.
-
-==================================================
-PHASE 20 — TESTING
-==================
-
-Create or update frontend tests using the project's existing framework.
-
-At minimum, test applicable cases:
-
-### Authentication
-
-* Unauthenticated user cannot access protected route.
-* Logout clears auth state.
-* Expired token is handled.
-* Failed refresh terminates session safely.
-
-### Authorization UX
-
-* Normal user cannot access admin UI.
-* Admin UI is hidden/protected appropriately.
-* Direct URL navigation is guarded.
-
-### XSS
-
-* Product/review/user content is safely rendered.
-* Malicious HTML does not execute.
-
-### Open Redirect
-
-* External redirect is rejected.
-* Internal redirect works.
-
-### Payment
-
-* Frontend does not mark payment successful solely from URL/query parameters.
-* Payment state comes from backend.
-* Malicious payment parameters do not change order state.
-
-### Sensitive Data
-
-* Tokens are not logged.
-* Secrets are not embedded in frontend source.
-* Sensitive API responses are not exposed unnecessarily.
-
-### Input Validation
-
-* Invalid quantity rejected at UI level.
-* Invalid fields handled safely.
-* File upload constraints work if applicable.
-
-==================================================
-PHASE 21 — ADVERSARIAL TESTING
-==============================
-
-Act as an attacker.
-
-Attempt:
-
-1. Inject HTML into product/review/profile fields.
-2. Inject JavaScript through query parameters.
-3. Modify localStorage auth state.
-4. Modify client-side price.
-5. Modify client-side total.
-6. Modify payment status query parameters.
-7. Change order IDs in frontend routes.
-8. Access /admin directly.
-9. Manipulate redirect parameters.
-10. Trigger refresh-token loops.
-11. Upload malicious file types.
-12. Send malformed API responses where practical.
-13. Modify Redux/store/context state through browser tools.
-14. Attempt to bypass UI restrictions.
-
-IMPORTANT:
-
-Changing frontend state is expected to be possible.
-
-The question is:
-
-"Does changing frontend state cause an unauthorized or insecure backend action?"
-
-Do not classify client-side state manipulation alone as a backend authorization vulnerability because backend authorization has already been audited.
-
-==================================================
-PHASE 22 — REGRESSION
-=====================
-
-Run:
-
-1. Existing frontend unit tests.
-2. Existing integration tests.
-3. Component tests.
-4. E2E tests if available.
-5. Production build.
-6. Dependency audit.
-
-Verify that security fixes do not break:
-
-* Login
-* Registration
-* Logout
-* Product browsing
-* Search
-* Cart
-* Checkout
-* Order history
-* Payment
-* Profile
-* Admin UI
-
-==================================================
-PHASE 23 — FINAL SECURITY REPORT
-================================
-
-Return:
-
-# Phase 5 — Frontend Security Audit
-
-## Architecture
-
-* Framework:
-* Build tool:
-* State management:
-* Routing:
-* API client:
-* Authentication:
-* Token storage:
-
-## Findings
-
-For each:
-
-### [SEVERITY] Finding
-
-* Location:
-* Root cause:
-* Exploitation:
-* Impact:
-* Fix:
-* Test:
-
-## Security Areas
-
-| Area                           | Status        |
-| ------------------------------ | ------------- |
-| Authentication / Token Storage | PASS/FAIL     |
-| XSS                            | PASS/FAIL     |
-| DOM / URL XSS                  | PASS/FAIL     |
-| Route Guards                   | PASS/FAIL     |
-| Sensitive Data Exposure        | PASS/FAIL     |
-| Payment Flow                   | PASS/FAIL     |
-| Client-side Business Logic     | PASS/FAIL     |
-| Input Validation               | PASS/FAIL     |
-| File Upload                    | PASS/FAIL/N/A |
-| Open Redirect                  | PASS/FAIL     |
-| postMessage                    | PASS/FAIL/N/A |
-| API Client / Token Refresh     | PASS/FAIL     |
-| Dependency Security            | PASS/FAIL     |
-| Environment / Build Security   | PASS/FAIL     |
-| Security Headers               | PASS/FAIL/N/A |
-
-## Tests
-
-* Unit tests:
-* Integration tests:
-* E2E tests:
-* Production build:
-* Dependency audit:
-
-## Deferred Findings
-
-List findings that are valid but intentionally not fixed in this phase.
+14. UX STATES
+
+Every important interaction must define:
+
+Idle
+Loading
+Success
+Error
+Empty
+Disabled
 
 Examples:
 
-* Infrastructure-only security headers
-* Deployment configuration
-* Non-critical dependency upgrades
-* Performance improvements
+- Add to cart
+- Checkout
+- Login
+- Register
+- Product loading
+- Order loading
+- Admin mutations
 
-Do NOT silently ignore discovered security issues.
+Avoid blank screens.
+
+==================================================
+15. MOTION
+
+Use subtle animation only where it improves UX.
+
+Examples:
+
+- hover
+- button feedback
+- modal transition
+- drawer transition
+- page transition
+- cart feedback
+
+Avoid excessive animations.
+
+Respect:
+
+prefers-reduced-motion
+
+==================================================
+16. IMPLEMENTATION RULES
+
+IMPORTANT:
+
+- Preserve existing API contracts.
+- Preserve existing routes unless there is a strong UX reason.
+- Preserve authentication behavior.
+- Preserve authorization behavior.
+- Preserve backend business logic.
+- Do not reintroduce Supabase.
+- Do not add client-side business authority.
+- Do not store secrets in frontend code.
+- Do not rewrite backend APIs merely to simplify UI.
+
+Reuse existing infrastructure whenever possible.
+
+==================================================
+17. DESIGN QUALITY BAR
+
+The result should feel like a production ecommerce product.
+
+Avoid:
+
+- generic template appearance
+- excessive gradients
+- excessive rounded cards
+- inconsistent spacing
+- random colors
+- too many font families
+- giant unnecessary headings
+- visually noisy dashboards
+- desktop-only layouts
+
+Prioritize:
+
+- hierarchy
+- whitespace
+- consistency
+- readability
+- conversion
+- accessibility
+- responsive behavior
+
+==================================================
+18. IMPLEMENTATION ORDER
+
+Follow this order:
+
+1. Design tokens
+2. Typography
+3. Global layout
+4. Header / navigation
+5. Footer
+6. Core UI primitives
+7. Product components
+8. Homepage
+9. Product listing
+10. Product detail
+11. Cart
+12. Checkout
+13. Authentication
+14. Orders
+15. Admin layout
+16. Admin dashboard
+17. Admin products
+18. Admin orders
+19. Responsive polish
+20. Accessibility polish
+
+==================================================
+19. VALIDATION
+
+After implementation:
+
+Run:
+
+- TypeScript check
+- production build
+
+Verify:
+
+- all existing routes compile
+- no Supabase references return
+- API calls remain unchanged
+- authentication still works
+- admin authorization remains backend-enforced
+- no price logic is moved into frontend authority
+- no secrets are introduced
+
+==================================================
+20. DELIVERABLE
+
+Return:
+
+# PHASE 6 — FRONTEND UI/UX DESIGN REPORT
+
+## Current Frontend Audit
+
+## Design Direction
+
+## Design System
+
+## Typography
+
+## Color Tokens
+
+## Spacing / Radius / Elevation
+
+## Component Architecture
+
+## Customer UX
+
+## Admin UX
+
+## Responsive Strategy
+
+## Accessibility Strategy
+
+## Implementation Summary
+
+## Build Verification
+
+## Remaining UX Improvements
+
+## Security Constraints Preserved
 
 ## Final Decision
 
-Use exactly one:
+Use:
 
-FRONTEND SECURITY AUDIT = PASS
+FRONTEND DESIGN = COMPLETE
 
-or:
+or
 
-FRONTEND SECURITY AUDIT = PASS WITH DEFERRED FINDINGS
+FRONTEND DESIGN = BLOCKED
 
-or:
+IMPORTANT:
 
-FRONTEND SECURITY AUDIT = FAIL
+Do not stop at a design proposal.
 
-==================================================
-STOP CONDITION
-==============
+Implement the approved design directly into the frontend codebase.
 
-When the frontend audit is:
-
-AUDITED
-→ FINDINGS IDENTIFIED
-→ CRITICAL/HIGH ISSUES FIXED
-→ TESTED
-→ PRODUCTION BUILD VERIFIED
-→ REGRESSION VERIFIED
-
-STOP.
-
-Do NOT automatically continue to:
-
-* Backend deployment hardening
-* CORS remediation
-* Rate limiting
-* Infrastructure security
-* Performance optimization
-* SEO
-* UI redesign
-
-Those are separate tasks.
-
-The objective of this phase is ONLY:
-
-FRONTEND SECURITY.
-
-Audit → Fix → Test → Verify → Report → STOP.
+At the end, provide a concise walkthrough of what was changed.
