@@ -59,7 +59,8 @@ namespace Florist.API.Controllers
             }
 
             var success = await _paymentService.ProcessSePayWebhookAsync(request);
-            return success ? Ok(new { success = true }) : BadRequest(new { success = false });
+            // Always return 200 OK so SePay doesn't retry infinitely on invalid transactions (e.g. test webhooks)
+            return Ok(new { success = success });
         }
 
         [HttpGet("{orderId:guid}/status")]
