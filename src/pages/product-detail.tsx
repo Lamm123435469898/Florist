@@ -16,7 +16,6 @@ interface Product {
   description: string | null;
   price: number;
   image_url: string | null;
-  variant_id?: string;
   category: string | null;
   stock: number | null;
 }
