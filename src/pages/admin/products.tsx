@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Plus, Edit, Trash2, Save, X, Search, Package, Loader2 } from "lucide-react";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { motion, AnimatePresence } from "framer-motion";
@@ -59,7 +59,6 @@ function ProductFormPanel({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const { toast } = useToast();
   const [formData, setFormData] = useState<ProductFormData>(
     editingProduct
       ? {
@@ -78,7 +77,7 @@ function ProductFormPanel({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.category_id) {
-      toast({ title: "Lỗi", description: "Vui lòng chọn danh mục", variant: "destructive" });
+      toast.error("Vui lòng chọn danh mục");
       return;
     }
     setSaving(true);
@@ -91,7 +90,7 @@ function ProductFormPanel({
           isActive: true,
         });
         if (!data.success) throw new Error(data.message);
-        toast({ title: "Đã cập nhật sản phẩm" });
+        toast.success("Đã cập nhật sản phẩm");
       } else {
         const { data } = await apiClient.post("/products", {
           name: formData.name,
@@ -102,12 +101,11 @@ function ProductFormPanel({
           imageUrls: formData.image_url ? [formData.image_url] : [],
         });
         if (!data.success) throw new Error(data.message);
-        toast({ title: "Đã thêm sản phẩm" });
+        toast.success("Đã thêm sản phẩm");
       }
       onSaved();
       onClose();
-    } catch (error: any) {
-      toast({ title: "Lỗi", description: error.response?.data?.message || "Không thể lưu sản phẩm", variant: "destructive" });
+      // Error is handled globally
     } finally {
       setSaving(false);
     }
@@ -195,7 +193,6 @@ function ProductFormPanel({
 }
 
 export default function AdminProducts() {
-  const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -233,7 +230,7 @@ export default function AdminProducts() {
         })));
       }
     } catch {
-      toast({ title: "Lỗi", description: "Không thể tải danh sách sản phẩm", variant: "destructive" });
+      toast.error("Không thể tải danh sách sản phẩm");
     } finally {
       setLoading(false);
     }
@@ -245,11 +242,11 @@ export default function AdminProducts() {
     try {
       const { data } = await apiClient.delete(`/products/${id}`);
       if (data.success) {
-        toast({ title: "Đã xóa sản phẩm" });
+        toast.success("Đã xóa sản phẩm");
         fetchProducts();
       }
     } catch {
-      toast({ title: "Lỗi", description: "Không thể xóa sản phẩm", variant: "destructive" });
+      // Error handled globally
     } finally {
       setDeletingId(null);
     }

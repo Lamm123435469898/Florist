@@ -3,7 +3,7 @@ import { apiClient } from "@/lib/api-client";
 import { AdminLayout } from "@/components/admin-layout";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { User, Phone, Mail, MapPin, Search, Package, Clock, Loader2, ArrowRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -54,7 +54,6 @@ function getStatusLabel(status: string) {
 }
 
 export default function AdminOrders() {
-  const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -73,8 +72,7 @@ export default function AdminOrders() {
         setOrders(data.data.items);
       }
     } catch (error) {
-      console.error("Error fetching orders:", error);
-      toast({ title: "Lỗi", description: "Không thể lấy danh sách đơn hàng", variant: "destructive" });
+      toast.error("Không thể lấy danh sách đơn hàng");
     } finally {
       setLoading(false);
     }
@@ -84,7 +82,7 @@ export default function AdminOrders() {
     try {
       const { data } = await apiClient.put(`/orders/admin/${orderId}/status`, { status: newStatus });
       if (data.success) {
-        toast({ title: "Đã cập nhật trạng thái đơn hàng" });
+        toast.success("Đã cập nhật trạng thái đơn hàng");
         fetchOrders();
         if (selectedOrder?.id === orderId) {
           setSelectedOrder({ ...selectedOrder, status: newStatus });
@@ -93,7 +91,7 @@ export default function AdminOrders() {
         throw new Error(data.message);
       }
     } catch (error: any) {
-      toast({ title: "Lỗi", description: error.message || "Không thể cập nhật trạng thái", variant: "destructive" });
+      toast.error(error.message || "Không thể cập nhật trạng thái");
     }
   };
 

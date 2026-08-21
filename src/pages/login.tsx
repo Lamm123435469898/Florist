@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { AnimatedNavbar } from "@/components/animated-navbar";
 import { AnimatedFooter } from "@/components/animated-footer";
@@ -17,7 +17,6 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,18 +26,13 @@ export default function Login() {
     const { error } = await signIn(email, password);
 
     if (error) {
-      toast({
-        title: "Đăng nhập thất bại",
-        description: error.message === "Invalid login credentials"
+      toast.error(
+        error.message === "Invalid login credentials"
           ? "Email hoặc mật khẩu không đúng"
-          : "Có lỗi xảy ra, vui lòng thử lại",
-        variant: "destructive",
-      });
+          : "Có lỗi xảy ra, vui lòng thử lại"
+      );
     } else {
-      toast({
-        title: "Đăng nhập thành công",
-        description: "Chào mừng bạn quay trở lại!",
-      });
+      toast.success("Đăng nhập thành công, chào mừng bạn quay trở lại!");
       navigate("/");
     }
 

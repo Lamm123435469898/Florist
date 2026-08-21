@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'sonner';
 
 // The ASP.NET Core API usually runs on localhost:5235 (HTTP) or 7080 (HTTPS) in development
 // For this environment, we'll assume it's running on HTTP port 5235.
@@ -63,6 +64,39 @@ apiClient.interceptors.response.use(
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }
+    }
+    // Global Error Handling
+    if (error.response) {
+      const status = error.response.status;
+      const data = error.response.data;
+      
+      switch (status) {
+        case 401:
+          // Handled above (or retry failed)
+          break;
+        case 403:
+          toast.error("Bạn không có quyền thực hiện thao tác này.");
+          break;
+        case 404:
+          toast.error("Không tìm thấy dữ liệu yêu cầu.");
+          break;
+        case 409:
+          toast.error(data?.message || "Đã xảy ra xung đột dữ liệu.");
+          break;
+        case 422:
+        case 400:
+          toast.error(data?.message || "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.");
+          break;
+        case 429:
+          toast.error("Bạn thao tác quá nhanh. Vui lòng thử lại sau.");
+          break;
+        case 500:
+        default:
+          toast.error("Đã có lỗi hệ thống xảy ra. Vui lòng thử lại sau.");
+          break;
+      }
+    } else if (error.request) {
+      toast.error("Không thể kết nối máy chủ. Vui lòng thử lại.");
     }
     
     return Promise.reject(error);

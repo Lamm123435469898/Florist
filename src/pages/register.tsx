@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Eye, EyeOff, Mail, Lock, User, Phone } from "lucide-react";
 import { AnimatedNavbar } from "@/components/animated-navbar";
 import { AnimatedFooter } from "@/components/animated-footer";
@@ -20,27 +20,18 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { signUp } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      toast({
-        title: "Lỗi",
-        description: "Mật khẩu xác nhận không khớp",
-        variant: "destructive",
-      });
+      toast.error("Mật khẩu xác nhận không khớp");
       return;
     }
 
     if (password.length < 6) {
-      toast({
-        title: "Lỗi",
-        description: "Mật khẩu phải có ít nhất 6 ký tự",
-        variant: "destructive",
-      });
+      toast.error("Mật khẩu phải có ít nhất 6 ký tự");
       return;
     }
 
@@ -52,16 +43,9 @@ export default function Register() {
     });
 
     if (error) {
-      toast({
-        title: "Đăng ký thất bại",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message || "Đăng ký thất bại");
     } else {
-      toast({
-        title: "Đăng ký thành công",
-        description: "Vui lòng kiểm tra email để xác nhận tài khoản",
-      });
+      toast.success("Đăng ký thành công, vui lòng kiểm tra email để xác nhận tài khoản");
       navigate("/login");
     }
 

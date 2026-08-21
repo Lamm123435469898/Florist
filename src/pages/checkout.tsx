@@ -10,14 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/contexts/cart-context";
 import { useAuth } from "@/contexts/auth-context";
 import { apiClient } from "@/lib/api-client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 export default function Checkout() {
   const { items, totalPrice, clearCart, loading: cartLoading } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -42,11 +41,7 @@ export default function Checkout() {
     e.preventDefault();
     
     if (!user) {
-      toast({
-        title: "Vui lòng đăng nhập",
-        description: "Bạn cần đăng nhập để đặt hàng.",
-        variant: "destructive",
-      });
+      toast.error("Vui lòng đăng nhập để đặt hàng.");
       navigate("/login");
       return;
     }
@@ -66,17 +61,13 @@ export default function Checkout() {
         // Our backend API probably clears the cart automatically upon order creation.
         // We will just fetch cart items again to clear the local state, or clearCart locally.
         await clearCart(); 
+        toast.success("Đặt hàng thành công");
         navigate(`/order-success?id=${data.data.id}`);
       } else {
         throw new Error(data.message || "Failed to place order");
       }
     } catch (error: any) {
-      console.error("Lỗi đặt hàng:", error);
-      toast({
-        title: "Lỗi",
-        description: error.response?.data?.message || error.message || "Đã có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.",
-        variant: "destructive",
-      });
+      // Global error handler takes care of displaying the error message
     } finally {
       setLoading(false);
     }

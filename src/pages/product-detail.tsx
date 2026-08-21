@@ -25,6 +25,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [isAdding, setIsAdding] = useState(false);
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -187,10 +188,19 @@ const ProductDetail = () => {
                   <Button
                     size="lg"
                     className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-none h-14 text-base tracking-wide flex items-center justify-center gap-2"
-                    onClick={() => addItem(product.variant_id || product.id, quantity)}
+                    disabled={isAdding}
+                    onClick={async () => {
+                      setIsAdding(true);
+                      await addItem(product.variant_id || product.id, quantity);
+                      setIsAdding(false);
+                    }}
                   >
-                    <ShoppingBag className="h-5 w-5" />
-                    Thêm vào giỏ
+                    {isAdding ? (
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-r-transparent mr-2" />
+                    ) : (
+                      <ShoppingBag className="h-5 w-5" />
+                    )}
+                    {isAdding ? "Đang thêm..." : "Thêm vào giỏ"}
                   </Button>
                   <Button
                     size="lg"

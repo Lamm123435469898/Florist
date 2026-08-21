@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { apiClient } from "@/lib/api-client";
 import { useAuth } from "./auth-context";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface CartItem {
   id: string;
@@ -36,7 +36,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
@@ -85,11 +84,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = async (productId: string, quantity = 1) => {
     if (!user) {
-      toast({
-        title: "Lỗi",
-        description: "Vui lòng đăng nhập để thêm sản phẩm vào giỏ",
-        variant: "destructive",
-      });
+      toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ");
       return;
     }
 
@@ -100,19 +95,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       });
 
       if (data.success) {
-        toast({
-          title: "Thành công",
-          description: "Đã thêm sản phẩm vào giỏ",
-        });
+        toast.success("Đã thêm sản phẩm vào giỏ");
         setItems(mapCartDtoToItems(data.data));
       }
     } catch (error) {
-      console.error("Error adding item to cart:", error);
-      toast({
-        title: "Lỗi",
-        description: "Không thể thêm sản phẩm",
-        variant: "destructive",
-      });
+      // Global error handler will show the toast
     }
   };
 
@@ -120,19 +107,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       const { data } = await apiClient.delete(`/cart/items/${itemId}`);
       if (data.success) {
-        toast({
-          title: "Thành công",
-          description: "Đã xóa sản phẩm khỏi giỏ",
-        });
+        toast.success("Đã xóa sản phẩm khỏi giỏ");
         setItems(mapCartDtoToItems(data.data));
       }
     } catch (error) {
-      console.error("Error removing item from cart:", error);
-      toast({
-        title: "Lỗi",
-        description: "Không thể xóa sản phẩm",
-        variant: "destructive",
-      });
+      // Global error handler will show the toast
     }
   };
 
@@ -148,12 +127,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems(mapCartDtoToItems(data.data));
       }
     } catch (error) {
-      console.error("Error updating cart quantity:", error);
-      toast({
-        title: "Lỗi",
-        description: "Không thể cập nhật số lượng",
-        variant: "destructive",
-      });
+      // Global error handler will show the toast
     }
   };
 
@@ -164,18 +138,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const { data } = await apiClient.delete("/cart");
       if (data.success) {
         setItems([]);
-        toast({
-          title: "Thành công",
-          description: "Đã xóa toàn bộ giỏ hàng",
-        });
+        toast.success("Đã xóa toàn bộ giỏ hàng");
       }
     } catch (error) {
-      console.error("Error clearing cart:", error);
-      toast({
-        title: "Lỗi",
-        description: "Không thể làm sạch giỏ hàng",
-        variant: "destructive",
-      });
+      // Global error handler will show the toast
     }
   };
 
