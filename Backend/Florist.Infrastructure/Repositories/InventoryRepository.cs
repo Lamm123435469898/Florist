@@ -13,24 +13,30 @@ namespace Florist.Infrastructure.Repositories
         public InventoryRepository(ApplicationDbContext context) => _context = context;
 
         public async Task<ProductVariant?> GetVariantWithLockAsync(Guid variantId) =>
-            await _context.ProductVariants
-                .FromSqlRaw("SELECT * FROM ProductVariants WITH (UPDLOCK, ROWLOCK) WHERE Id = {0}", variantId)
-                .FirstOrDefaultAsync();
+            await _context.ProductVariants.FirstOrDefaultAsync(v => v.Id == variantId);
 
         public async Task DecrementStockAsync(Guid variantId, int quantity)
         {
-            // Atomic update to prevent race condition
-            var rows = await _context.Database.ExecuteSqlRawAsync(
-                "UPDATE ProductVariants SET Stock = Stock - {0} WHERE Id = {1} AND Stock >= {0}",
-                quantity, variantId);
-            if (rows == 0)
-                throw new Florist.Application.Exceptions.BusinessRuleException("Insufficient stock or concurrent update detected.");
+            var variant = await _context.ProductVariants.FindAsync(variantId);
+            if (variant == null || variant.Stock < quantity)
+                throw new Florist.Application.Exceptions.BusinessRuleException("Insufficient stock.");
+            
+            variant.Stock -= quantity;
+            _context.ProductVariants.Update(variant);
+            try { await _context.SaveChangesAsync(); }
+            catch (DbUpdateConcurrencyException) { throw new Florist.Application.Exceptions.BusinessRuleException("Concurrent update detected."); }
         }
 
-        public async Task IncrementStockAsync(Guid variantId, int quantity) =>
-            await _context.Database.ExecuteSqlRawAsync(
-                "UPDATE ProductVariants SET Stock = Stock + {0} WHERE Id = {1}",
-                quantity, variantId);
+        public async Task IncrementStockAsync(Guid variantId, int quantity)
+        {
+            var variant = await _context.ProductVariants.FindAsync(variantId);
+            if (variant != null)
+            {
+                variant.Stock += quantity;
+                _context.ProductVariants.Update(variant);
+                await _context.SaveChangesAsync();
+            }
+        }
 
         public async Task AddTransactionAsync(InventoryTransaction transaction)
         {
