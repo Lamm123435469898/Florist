@@ -11,6 +11,7 @@ namespace Florist.Application.Interfaces.Repositories
         Task<PagedResult<Order>> GetOrdersByUserAsync(Guid userId, int page, int pageSize);
         Task<PagedResult<Order>> GetAllOrdersAsync(int page, int pageSize, string? status);
         Task<Order?> GetByIdAsync(Guid id);
+        Task<Order?> GetOrderByPaymentReferenceAsync(string paymentReference);
         Task<Order> CreateAsync(Order order);
         Task<Order> UpdateAsync(Order order);
         Task<bool> HasUserPurchasedProductAsync(Guid userId, Guid productId);

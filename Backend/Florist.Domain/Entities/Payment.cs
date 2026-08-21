@@ -11,6 +11,7 @@ namespace Florist.Domain.Entities
         public decimal Amount { get; set; }
         public PaymentStatus Status { get; set; } = PaymentStatus.PENDING;
         public string? TransactionId { get; set; }
+        public string? PaymentReference { get; set; }
         
         public Guid OrderId { get; set; }
         public Order? Order { get; set; }

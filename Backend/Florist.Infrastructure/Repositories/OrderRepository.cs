@@ -55,6 +55,14 @@ namespace Florist.Infrastructure.Repositories
                 .Include(o => o.User)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
+        public async Task<Order?> GetOrderByPaymentReferenceAsync(string paymentReference)
+        {
+            if (string.IsNullOrWhiteSpace(paymentReference)) return null;
+            return await _context.Orders
+                .Include(o => o.Payment)
+                .FirstOrDefaultAsync(o => o.Payment != null && o.Payment.PaymentReference == paymentReference);
+        }
+
         public async Task<Order> CreateAsync(Order order) { _context.Orders.Add(order); await _context.SaveChangesAsync(); return order; }
         public async Task<Order> UpdateAsync(Order order) { _context.Orders.Update(order); await _context.SaveChangesAsync(); return order; }
 

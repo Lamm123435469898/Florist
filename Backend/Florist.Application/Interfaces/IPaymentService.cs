@@ -11,6 +11,7 @@ namespace Florist.Application.Interfaces
     {
         Task<PaymentResultDto> CreatePaymentAsync(Guid userId, CreatePaymentRequest request);
         Task<bool> ProcessCallbackAsync(PaymentCallbackDto callback);
+        Task<bool> ProcessSePayWebhookAsync(SePayWebhookRequest request);
         Task<AdminPaymentDto?> GetPaymentByOrderIdAsync(Guid orderId);
     }
 }

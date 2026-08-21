@@ -24,6 +24,7 @@ export default function Checkout() {
     email: user?.email || "",
     phone: "",
     address: "",
+    paymentMethod: "COD"
   });
 
   useEffect(() => {
@@ -54,13 +55,27 @@ export default function Checkout() {
         customerEmail: formData.email,
         customerPhone: formData.phone,
         shippingAddress: formData.address,
-        paymentMethod: "COD"
+        paymentMethod: formData.paymentMethod
       });
 
       if (data.success) {
-        // Our backend API probably clears the cart automatically upon order creation.
-        // We will just fetch cart items again to clear the local state, or clearCart locally.
         await clearCart(); 
+        
+        if (formData.paymentMethod === "SEPAY") {
+          const paymentRes = await apiClient.post("/payments/create", {
+            orderId: data.data.id,
+            paymentMethod: "SEPAY"
+          });
+          
+          if (paymentRes.data.success) {
+            // Navigate to payment page with state
+            navigate(`/payment?id=${data.data.id}`, { 
+              state: { paymentData: paymentRes.data.data }
+            });
+            return;
+          }
+        }
+        
         toast.success("Đặt hàng thành công");
         navigate(`/order-success?id=${data.data.id}`);
       } else {
@@ -144,12 +159,41 @@ export default function Checkout() {
                   />
                 </div>
 
-                {/* Phương thức thanh toán - Giả lập COD */}
+                {/* Phương thức thanh toán */}
                 <div className="pt-6 border-t border-border mt-6">
                   <h3 className="font-medium text-foreground mb-4 text-sm">Phương thức thanh toán</h3>
-                  <div className="bg-secondary/20 border border-border p-4 rounded-sm flex items-center justify-between">
-                    <span className="text-sm text-foreground/80">Thanh toán khi nhận hàng (COD)</span>
-                    <div className="w-4 h-4 rounded-full border-[3px] border-primary flex-shrink-0"></div>
+                  <div className="space-y-3">
+                    <label className={`block p-4 rounded-sm border cursor-pointer transition-colors ${formData.paymentMethod === 'COD' ? 'bg-secondary/20 border-primary' : 'border-border bg-white hover:bg-secondary/10'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <input 
+                            type="radio" 
+                            name="paymentMethod"
+                            value="COD"
+                            checked={formData.paymentMethod === 'COD'}
+                            onChange={handleInputChange}
+                            className="text-primary focus:ring-primary h-4 w-4"
+                          />
+                          <span className="text-sm font-medium text-foreground">Thanh toán khi nhận hàng (COD)</span>
+                        </div>
+                      </div>
+                    </label>
+
+                    <label className={`block p-4 rounded-sm border cursor-pointer transition-colors ${formData.paymentMethod === 'SEPAY' ? 'bg-secondary/20 border-primary' : 'border-border bg-white hover:bg-secondary/10'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <input 
+                            type="radio" 
+                            name="paymentMethod"
+                            value="SEPAY"
+                            checked={formData.paymentMethod === 'SEPAY'}
+                            onChange={handleInputChange}
+                            className="text-primary focus:ring-primary h-4 w-4"
+                          />
+                          <span className="text-sm font-medium text-foreground">Chuyển khoản qua mã QR (SePay)</span>
+                        </div>
+                      </div>
+                    </label>
                   </div>
                 </div>
 

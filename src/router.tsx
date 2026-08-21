@@ -13,6 +13,7 @@ const AdminDashboard = lazy(() => import("./pages/admin/dashboard"));
 const AdminProducts = lazy(() => import("./pages/admin/products"));
 const AdminOrders = lazy(() => import("./pages/admin/orders"));
 const Checkout = lazy(() => import("./pages/checkout"));
+const Payment = lazy(() => import("./pages/payment"));
 const OrderSuccess = lazy(() => import("./pages/order-success"));
 const Orders = lazy(() => import("./pages/orders"));
 
@@ -99,6 +100,11 @@ export const routers = [
       path: "/orders",
       name: 'orders',
       element: withSuspense(Orders),
+    },
+    {
+      path: "/payment",
+      name: 'payment',
+      element: withSuspense(Payment),
     },
     /* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */
     {
