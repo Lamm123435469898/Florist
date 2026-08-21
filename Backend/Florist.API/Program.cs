@@ -233,6 +233,18 @@ app.MapControllers();
 app.MapHealthChecks("/health");
 app.MapGet("/", () => "Florist API is running! (Render Health Check)");
 
+app.MapGet("/api/auth/fix-admin", async (Florist.Infrastructure.Data.ApplicationDbContext context, Florist.Application.Interfaces.Auth.IPasswordHasher hasher) => 
+{
+    var admin = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(context.Users, u => u.Email == "admin@florist.com");
+    if (admin != null) admin.PasswordHash = hasher.HashPassword("password123");
+    
+    var admin2 = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(context.Users, u => u.Email == "admin2@florist.com");
+    if (admin2 != null) admin2.PasswordHash = hasher.HashPassword("password123");
+
+    await context.SaveChangesAsync();
+    return "Fixed passwords for admin@florist.com and admin2@florist.com to 'password123'.";
+});
+
 app.Run();
 
 
