@@ -28,21 +28,8 @@ builder.Services.AddControllers();
 // Fluent Validation
 builder.Services.AddValidatorsFromAssembly(typeof(Florist.Application.Validators.Auth.RegisterRequestValidator).Assembly);
 
-// CORS - Hardcode allowed origins for reliability across all hosting platforms
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("DefaultCorsPolicy", policy =>
-    {
-        policy.WithOrigins(
-                  "http://localhost:3000",
-                  "http://localhost:5173",
-                  "http://localhost:8080",
-                  "https://floristhcm.netlify.app")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
-    });
-});
+// CORS is configured entirely in the manual middleware below to ensure bulletproof behavior.
+// We remove the default AddCors here to avoid confusion.
 
 // Rate Limiting
 builder.Services.AddMemoryCache();
@@ -151,7 +138,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
+// Security Headers Middleware
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("Content-Security-Policy", "frame-ancestors 'none';");
+    await next();
+});
+
 // Manual CORS middleware - bulletproof
+var allowedOrigins = new[] { "https://florist-j56x.onrender.com", "https://floristhcm.netlify.app", "https://florist-h92auy4i.b4a.run" };
+
 app.Use(async (context, next) =>
 {
     context.Response.OnStarting(() =>
@@ -159,15 +160,24 @@ app.Use(async (context, next) =>
         var origin = context.Request.Headers["Origin"].ToString();
         if (!string.IsNullOrEmpty(origin))
         {
-            context.Response.Headers.Remove("Access-Control-Allow-Origin");
-            context.Response.Headers.Remove("Access-Control-Allow-Methods");
-            context.Response.Headers.Remove("Access-Control-Allow-Headers");
-            context.Response.Headers.Remove("Access-Control-Allow-Credentials");
+            var isDevelopment = app.Environment.IsDevelopment();
+            bool isAllowed = false;
+            
+            if (isDevelopment && origin.StartsWith("http://localhost")) isAllowed = true;
+            if (allowedOrigins.Contains(origin)) isAllowed = true;
 
-            context.Response.Headers.Append("Access-Control-Allow-Origin", origin);
-            context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
-            context.Response.Headers.Append("Access-Control-Allow-Headers", "*");
-            context.Response.Headers.Append("Access-Control-Allow-Credentials", "true");
+            if (isAllowed)
+            {
+                context.Response.Headers.Remove("Access-Control-Allow-Origin");
+                context.Response.Headers.Remove("Access-Control-Allow-Methods");
+                context.Response.Headers.Remove("Access-Control-Allow-Headers");
+                context.Response.Headers.Remove("Access-Control-Allow-Credentials");
+
+                context.Response.Headers.Append("Access-Control-Allow-Origin", origin);
+                context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+                context.Response.Headers.Append("Access-Control-Allow-Headers", "*");
+                context.Response.Headers.Append("Access-Control-Allow-Credentials", "true");
+            }
         }
         return Task.CompletedTask;
     });
