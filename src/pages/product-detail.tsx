@@ -18,6 +18,7 @@ interface Product {
   image_url: string | null;
   category: string | null;
   stock: number | null;
+  images: string[];
 }
 
 const ProductDetail = () => {
@@ -26,6 +27,7 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
+  const [activeImage, setActiveImage] = useState<string | null>(null);
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -49,9 +51,15 @@ const ProductDetail = () => {
           price: item.variants?.[0]?.price || 0,
           image_url: item.images?.find((img: any) => img.isPrimary)?.imageUrl || item.images?.[0]?.imageUrl || null,
           category: item.categoryName,
-          stock: item.variants?.[0]?.stock || 0
+          stock: item.variants?.[0]?.stock || 0,
+          images: item.images?.map((img: any) => img.imageUrl) || []
         };
         setProduct(mappedProduct);
+        if (mappedProduct.images.length > 0) {
+          setActiveImage(mappedProduct.images[0]);
+        } else {
+          setActiveImage(mappedProduct.image_url);
+        }
       } else {
         setProduct(null);
       }
@@ -116,18 +124,35 @@ const ProductDetail = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
             {/* Product Image */}
-            <motion.div 
-              className="relative aspect-[4/5] bg-secondary/30 rounded-sm overflow-hidden"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <img
-                src={product.image_url || "https://via.placeholder.com/600x800?text=No+Image"}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            </motion.div>
+            <div className="flex flex-col gap-4">
+              <motion.div 
+                className="relative aspect-[4/5] bg-secondary/30 rounded-sm overflow-hidden"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <img
+                  src={activeImage || "https://via.placeholder.com/600x800?text=No+Image"}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              </motion.div>
+              {product.images && product.images.length > 1 && (
+                <div className="flex gap-4 overflow-x-auto pb-2">
+                  {product.images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveImage(img)}
+                      className={`relative w-20 h-24 flex-shrink-0 rounded-sm overflow-hidden border-2 transition-all ${
+                        activeImage === img ? "border-primary" : "border-transparent opacity-70 hover:opacity-100"
+                      }`}
+                    >
+                      <img src={img} alt={`${product.name} ${idx + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Product Info */}
             <motion.div
@@ -179,16 +204,16 @@ const ProductDetail = () => {
                       +
                     </button>
                   </div>
-                  <span className="text-xs text-foreground/50">
-                    {product.stock ? `(Còn ${product.stock} sản phẩm)` : ""}
+                  <span className="text-xs font-medium px-2 py-1 bg-secondary rounded-sm text-foreground/70">
+                    {product.stock === 0 ? "Hết hàng" : `Còn ${product.stock} sản phẩm`}
                   </span>
                 </div>
 
                 <div className="flex gap-4">
                   <Button
                     size="lg"
-                    className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-none h-14 text-base tracking-wide flex items-center justify-center gap-2"
-                    disabled={isAdding}
+                    className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-none h-14 text-base tracking-wide flex items-center justify-center gap-2 disabled:opacity-50"
+                    disabled={isAdding || product.stock === 0}
                     onClick={async () => {
                       setIsAdding(true);
                       await addItem(product.variant_id || product.id, quantity);
@@ -200,7 +225,7 @@ const ProductDetail = () => {
                     ) : (
                       <ShoppingBag className="h-5 w-5" />
                     )}
-                    {isAdding ? "Đang thêm..." : "Thêm vào giỏ"}
+                    {isAdding ? "Đang thêm..." : product.stock === 0 ? "Hết hàng" : "Thêm vào giỏ"}
                   </Button>
                   <Button
                     size="lg"

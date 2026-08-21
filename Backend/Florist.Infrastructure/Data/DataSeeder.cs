@@ -112,6 +112,13 @@ namespace Florist.Infrastructure.Data
                 context.Users.Add(admin);
                 if (adminRole != null) context.UserRoles.Add(new UserRole { UserId = admin.Id, RoleId = adminRole.Id });
             }
+
+            if (!await context.Users.AnyAsync(u => u.Email == "admin2@florist.com"))
+            {
+                var admin2 = new User { Id = Guid.NewGuid(), Email = "admin2@florist.com", FullName = "System Admin 2", PhoneNumber = "0900000002", PasswordHash = "$2a$11$N94M1/3aZg3O./qT9/p.Fef7zK2qH3jV3p3bW8x1tM3eD.T/f1w.e" };
+                context.Users.Add(admin2);
+                if (adminRole != null) context.UserRoles.Add(new UserRole { UserId = admin2.Id, RoleId = adminRole.Id });
+            }
             
             if (!await context.Users.AnyAsync(u => u.Email == "staff@florist.com"))
             {

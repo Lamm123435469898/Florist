@@ -9,9 +9,30 @@ import { useCart } from "@/contexts/cart-context";
 
 const Cart = () => {
   const { items: cartItems, updateQuantity, removeItem, totalPrice, loading } = useCart();
+  const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 
-  if (loading) {
+  const handleUpdateQuantity = async (id: string, newQuantity: number) => {
+    setUpdatingItems(prev => new Set(prev).add(id));
+    await updateQuantity(id, newQuantity);
+    setUpdatingItems(prev => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  const handleRemoveItem = async (id: string) => {
+    setUpdatingItems(prev => new Set(prev).add(id));
+    await removeItem(id);
+    setUpdatingItems(prev => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  if (loading && cartItems.length === 0) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <VerticalFlowerLine />
@@ -104,8 +125,9 @@ const Cart = () => {
                         </h3>
                       </div>
                       <button
-                        className="text-foreground/40 hover:text-destructive transition-colors p-2"
-                        onClick={() => removeItem(item.id)}
+                        className="text-foreground/40 hover:text-destructive transition-colors p-2 disabled:opacity-50"
+                        onClick={() => handleRemoveItem(item.id)}
+                        disabled={updatingItems.has(item.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -115,8 +137,8 @@ const Cart = () => {
                       <div className="flex items-center border border-border rounded-sm">
                         <button
                           className="w-8 h-8 flex items-center justify-center text-foreground/60 hover:text-primary transition-colors disabled:opacity-50"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          disabled={loading}
+                          onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                          disabled={updatingItems.has(item.id)}
                         >
                           <Minus className="h-3 w-3" />
                         </button>
@@ -125,8 +147,8 @@ const Cart = () => {
                         </span>
                         <button
                           className="w-8 h-8 flex items-center justify-center text-foreground/60 hover:text-primary transition-colors disabled:opacity-50"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          disabled={loading}
+                          onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                          disabled={updatingItems.has(item.id)}
                         >
                           <Plus className="h-3 w-3" />
                         </button>

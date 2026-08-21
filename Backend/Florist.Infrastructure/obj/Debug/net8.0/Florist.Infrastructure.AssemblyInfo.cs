@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Florist.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4b8fe4bfa985d71d16564fd7a282452b6d21b58f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2e66fe22f643739515034802a31defa5583ba0b7")]
 [assembly: System.Reflection.AssemblyProductAttribute("Florist.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Florist.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

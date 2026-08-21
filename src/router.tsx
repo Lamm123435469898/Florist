@@ -1,95 +1,110 @@
-import Index from "./pages/index";
-import NotFound from "./pages/not-found";
-import Products from "./pages/products";
-import ProductDetail from "./pages/product-detail";
-import Cart from "./pages/cart";
-import About from "./pages/about";
-import Contact from "./pages/contact";
-import Login from "./pages/login";
-import Register from "./pages/register";
-import AdminDashboard from "./pages/admin/dashboard";
-import AdminProducts from "./pages/admin/products";
-import AdminOrders from "./pages/admin/orders";
-import Checkout from "./pages/checkout";
-import OrderSuccess from "./pages/order-success";
-import Orders from "./pages/orders";
+import { lazy, Suspense } from 'react';
+
+const Index = lazy(() => import("./pages/index"));
+const NotFound = lazy(() => import("./pages/not-found"));
+const Products = lazy(() => import("./pages/products"));
+const ProductDetail = lazy(() => import("./pages/product-detail"));
+const Cart = lazy(() => import("./pages/cart"));
+const About = lazy(() => import("./pages/about"));
+const Contact = lazy(() => import("./pages/contact"));
+const Login = lazy(() => import("./pages/login"));
+const Register = lazy(() => import("./pages/register"));
+const AdminDashboard = lazy(() => import("./pages/admin/dashboard"));
+const AdminProducts = lazy(() => import("./pages/admin/products"));
+const AdminOrders = lazy(() => import("./pages/admin/orders"));
+const Checkout = lazy(() => import("./pages/checkout"));
+const OrderSuccess = lazy(() => import("./pages/order-success"));
+const Orders = lazy(() => import("./pages/orders"));
+
+// A generic loading fallback for Suspense
+const Loading = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-r-transparent"></div>
+  </div>
+);
+
+const withSuspense = (Component: React.ComponentType) => (
+  <Suspense fallback={<Loading />}>
+    <Component />
+  </Suspense>
+);
 
 export const routers = [
     {
       path: "/",
       name: 'home',
-      element: <Index />,
+      element: withSuspense(Index),
     },
     {
       path: "/products",
       name: 'products',
-      element: <Products />,
+      element: withSuspense(Products),
     },
     {
       path: "/products/:id",
       name: 'product-detail',
-      element: <ProductDetail />,
+      element: withSuspense(ProductDetail),
     },
     {
       path: "/cart",
       name: 'cart',
-      element: <Cart />,
+      element: withSuspense(Cart),
     },
     {
       path: "/about",
       name: 'about',
-      element: <About />,
+      element: withSuspense(About),
     },
     {
       path: "/contact",
       name: 'contact',
-      element: <Contact />,
+      element: withSuspense(Contact),
     },
     {
       path: "/login",
       name: 'login',
-      element: <Login />,
+      element: withSuspense(Login),
     },
     {
       path: "/register",
       name: 'register',
-      element: <Register />,
+      element: withSuspense(Register),
     },
     {
       path: "/admin",
       name: 'admin',
-      element: <AdminDashboard />,
+      element: withSuspense(AdminDashboard),
     },
     {
       path: "/admin/products",
       name: 'admin-products',
-      element: <AdminProducts />,
+      element: withSuspense(AdminProducts),
     },
     {
       path: "/admin/orders",
       name: 'admin-orders',
-      element: <AdminOrders />,
+      element: withSuspense(AdminOrders),
     },
     {
       path: "/checkout",
       name: 'checkout',
-      element: <Checkout />,
+      element: withSuspense(Checkout),
     },
     {
       path: "/order-success",
       name: 'order-success',
-      element: <OrderSuccess />,
+      element: withSuspense(OrderSuccess),
     },
     {
       path: "/orders",
       name: 'orders',
-      element: <Orders />,
+      element: withSuspense(Orders),
     },
     /* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */
     {
       path: "*",
       name: '404',
-      element: <NotFound />,
+      element: withSuspense(NotFound),
     },
 ];
 

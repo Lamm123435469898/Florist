@@ -21,6 +21,7 @@ interface Product {
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -28,6 +29,7 @@ const Products = () => {
   const [isFiltering, setIsFiltering] = useState(false);
 
   useEffect(() => {
+    fetchCategories();
     fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only fetch once, we will filter locally for now to match previous behavior
@@ -58,7 +60,16 @@ const Products = () => {
     }
   };
 
-  const categories = ["all", "Khung Hoa Khô", "Khung Hoa Tươi", "Quà Tặng", "Custom Design"];
+  const fetchCategories = async () => {
+    try {
+      const { data } = await apiClient.get("/categories");
+      if (data.success && data.data) {
+        setCategories(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
 
   // Filter first
   const categoryFiltered = selectedCategory === "all" 
@@ -129,17 +140,27 @@ const Products = () => {
           <div className="flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-center mb-10 pb-6 border-b border-border">
             {/* Categories */}
             <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedCategory("all")}
+                className={`px-4 py-2 text-sm transition-colors rounded-sm ${
+                  selectedCategory === "all"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-transparent text-foreground/70 hover:bg-secondary"
+                }`}
+              >
+                Tất cả
+              </button>
               {categories.map((category) => (
                 <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.name)}
                   className={`px-4 py-2 text-sm transition-colors rounded-sm ${
-                    selectedCategory === category
+                    selectedCategory === category.name
                       ? "bg-primary text-primary-foreground"
                       : "bg-transparent text-foreground/70 hover:bg-secondary"
                   }`}
                 >
-                  {category === "all" ? "Tất cả" : category}
+                  {category.name}
                 </button>
               ))}
             </div>
