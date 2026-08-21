@@ -5,6 +5,7 @@ import { useCart } from "@/contexts/cart-context";
 
 interface AnimatedCardProps {
   id: string;
+  variantId?: string;
   name: string;
   price: number;
   imageUrl: string | null;
@@ -17,7 +18,8 @@ export function AnimatedProductCard({
   name, 
   price, 
   imageUrl, 
-  category, 
+  category,
+  variantId,
   className = "" 
 }: AnimatedCardProps) {
   const fallbackImage = "https://via.placeholder.com/400x500?text=No+Image";
@@ -59,7 +61,7 @@ export function AnimatedProductCard({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              addItem(id);
+              addItem(variantId || id);
             }}
           >
             <ShoppingBag className="h-4 w-4" />

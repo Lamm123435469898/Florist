@@ -18,6 +18,7 @@ interface Product {
   name: string;
   price: number;
   image_url: string | null;
+  variant_id?: string;
   category: string | null;
 }
 
@@ -31,6 +32,7 @@ const Index = () => {
         if (data.success && data.data?.items) {
           const mappedProducts = data.data.items.map((item: any) => ({
             id: item.id,
+            variant_id: item.variants?.[0]?.id,
             name: item.name,
             price: item.variants?.[0]?.price || 0,
             image_url: item.images?.find((img: any) => img.isPrimary)?.imageUrl || item.images?.[0]?.imageUrl || null,
@@ -173,6 +175,7 @@ const Index = () => {
                     price={p.price}
                     imageUrl={p.image_url}
                     category={p.category}
+                    variantId={p.variant_id}
                   />
                 ))
               : [hoakho1, hoakho2, hoakho1, hoakho2].map((img, i) => (

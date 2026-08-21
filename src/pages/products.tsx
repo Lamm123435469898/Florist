@@ -15,6 +15,7 @@ interface Product {
   description: string | null;
   price: number;
   image_url: string | null;
+  variant_id?: string;
   category: string | null;
 }
 
@@ -38,6 +39,7 @@ const Products = () => {
       if (data.success && data.data?.items) {
         const mappedProducts = data.data.items.map((item: any) => ({
           id: item.id,
+              variant_id: item.variants?.[0]?.id,
           name: item.name,
           description: item.description,
           price: item.variants?.[0]?.price || 0,

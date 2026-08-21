@@ -8,16 +8,17 @@ interface ProductCardProps {
   price: number;
   imageUrl: string | null;
   category?: string | null;
+  variantId?: string;
 }
 
-const ProductCard = ({ id, name, price, imageUrl, category }: ProductCardProps) => {
+const ProductCard = ({ id, name, price, imageUrl, category, variantId }: ProductCardProps) => {
   const { addItem } = useCart();
   const fallbackImage = "https://via.placeholder.com/400x500?text=No+Image";
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    await addItem(id);
+    await addItem(variantId || id);
   };
 
   return (
