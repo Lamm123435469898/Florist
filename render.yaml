@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: florist-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free # Có thể đổi sang starter nếu cần
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      # Khai báo chuỗi kết nối Database. Render sẽ tự hiểu __ tương đương với : trong JSON của C#
+      - key: ConnectionStrings__DefaultConnection
+        sync: false # Sẽ tự nhập trong dashboard Render
+      # Khai báo khóa bí mật JWT
+      - key: JwtSettings__Secret
+        generateValue: true # Render sẽ tự sinh một chuỗi ngẫu nhiên bảo mật
