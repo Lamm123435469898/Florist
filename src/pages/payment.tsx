@@ -18,19 +18,24 @@ export default function Payment() {
   const paymentData = location.state?.paymentData;
   const [isPolling, setIsPolling] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string>("PENDING");
+  const [countdown, setCountdown] = useState(300); // 5 minutes countdown
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const maxPollsRef = useRef(60);
+  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const maxPollsRef = useRef(150); // 150 polls x 2s = 5 minutes
 
   useEffect(() => {
     if (!orderId || !paymentData) {
       toast.error("Không tìm thấy thông tin thanh toán.");
       navigate("/orders");
+      return;
     }
-    
+    // Auto-start polling immediately when page loads
+    startPolling();
+
     return () => {
       stopPolling();
     };
-  }, [orderId, paymentData, navigate]);
+  }, [orderId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -38,25 +43,37 @@ export default function Payment() {
   };
 
   const startPolling = () => {
-    if (isPolling) return;
+    if (pollTimerRef.current) return; // already polling
     setIsPolling(true);
-    maxPollsRef.current = 60;
-    toast.info("Hệ thống đang kiểm tra thanh toán của bạn...");
-    
+    maxPollsRef.current = 150;
+    setCountdown(300);
+
+    // Countdown timer (visual only)
+    countdownTimerRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownTimerRef.current!);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Payment status polling
     pollTimerRef.current = setInterval(async () => {
       if (maxPollsRef.current <= 0) {
         stopPolling();
-        toast.error("Chưa nhận được xác nhận thanh toán. Vui lòng chờ hệ thống cập nhật.");
+        toast.warning("Hệ thống chưa nhận được xác nhận. Nếu bạn đã chuyển khoản, vui lòng chờ thêm hoặc liên hệ hỗ trợ.");
         return;
       }
-      
+
       try {
         const { data } = await apiClient.get(`/payments/${orderId}/status`);
         if (data.success) {
           setPaymentStatus(data.status);
           if (data.status === "PAID") {
             stopPolling();
-            toast.success("Thanh toán đã được xác nhận.");
+            toast.success("🎉 Thanh toán thành công! Đang chuyển hướng...");
             setTimeout(() => {
               navigate(`/order-success?id=${orderId}`);
             }, 1500);
@@ -75,6 +92,16 @@ export default function Payment() {
       clearInterval(pollTimerRef.current);
       pollTimerRef.current = null;
     }
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+  };
+
+  const formatCountdown = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
   };
 
   if (!paymentData) return null;
@@ -158,27 +185,28 @@ export default function Payment() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <Button 
-              onClick={startPolling}
-              disabled={isPolling || paymentStatus === "PAID"}
-              className="w-full bg-primary hover:bg-primary/90 text-white h-12 text-base rounded-none tracking-wide"
+            {/* Auto polling status - no manual button needed */}
+            <div className={`w-full h-12 flex items-center justify-center gap-3 rounded-none text-sm font-medium
+              ${paymentStatus === "PAID" 
+                ? "bg-green-50 text-green-700 border border-green-200" 
+                : "bg-blue-50 text-blue-700 border border-blue-200"
+              }`}
             >
               {paymentStatus === "PAID" ? (
-                <><CheckCircle2 className="mr-2 h-5 w-5" /> Thanh toán thành công</>
+                <><CheckCircle2 className="h-5 w-5" /> Thanh toán thành công!</>
               ) : isPolling ? (
-                <><RefreshCw className="mr-2 h-5 w-5 animate-spin" /> Đang kiểm tra giao dịch...</>
+                <><RefreshCw className="h-4 w-4 animate-spin" /> Đang chờ xác nhận giao dịch... {formatCountdown(countdown)}</>
               ) : (
-                "Tôi đã chuyển khoản"
+                <><RefreshCw className="h-4 w-4" /> Hệ thống đã dừng kiểm tra — <button className="underline" onClick={startPolling}>Kiểm tra lại</button></>
               )}
-            </Button>
-            
+            </div>
+
             <Button 
               variant="outline"
               onClick={() => navigate("/orders")}
-              disabled={isPolling && paymentStatus !== "PAID"}
               className="w-full rounded-none h-12 text-primary border-primary/20"
             >
-              Thanh toán sau
+              Xem lịch sử đơn hàng
             </Button>
           </div>
         </motion.div>
