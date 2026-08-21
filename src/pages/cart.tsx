@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AnimatedNavbar } from "@/components/animated-navbar";
 import { AnimatedFooter } from "@/components/animated-footer";
