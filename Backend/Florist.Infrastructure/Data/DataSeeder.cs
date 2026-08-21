@@ -121,14 +121,37 @@ namespace Florist.Infrastructure.Data
             }
             await context.SaveChangesAsync();
 
-            // 5. Seed sample product
+            // 5. Seed 9 sample products
             if (!await context.Categories.AnyAsync())
             {
-                var cat1 = new Category { Id = Guid.NewGuid(), Name = "Hoa Khô (Dry Flowers)", Slug = "hoa-kho", IsActive = true };
-                context.Categories.Add(cat1);
-                var p1 = new Product { Id = Guid.NewGuid(), Name = "Bó Hoa Baby Khô", Slug = "bo-hoa-baby-kho", Description = "Bó hoa baby khô phong cách Vintage", CategoryId = cat1.Id, IsActive = true };
-                context.Products.Add(p1);
-                context.ProductVariants.Add(new ProductVariant { Id = Guid.NewGuid(), ProductId = p1.Id, SKU = "BABY-M", Price = 250000, Stock = 100, IsActive = true });
+                var catHoaKho = new Category { Id = Guid.NewGuid(), Name = "Hoa Khô (Dry Flowers)", Slug = "hoa-kho", IsActive = true };
+                var catBoHoa = new Category { Id = Guid.NewGuid(), Name = "Bó Hoa", Slug = "bo-hoa", IsActive = true };
+                var catGioHoa = new Category { Id = Guid.NewGuid(), Name = "Giỏ Hoa", Slug = "gio-hoa", IsActive = true };
+                
+                context.Categories.AddRange(catHoaKho, catBoHoa, catGioHoa);
+
+                var products = new List<Product>
+                {
+                    new Product { Id = Guid.NewGuid(), Name = "Bó Hoa Baby Khô", Slug = "bo-hoa-baby-kho", Description = "Bó hoa baby khô phong cách Vintage", CategoryId = catHoaKho.Id, IsActive = true },
+                    new Product { Id = Guid.NewGuid(), Name = "Hoa Khô Mix Lọ Thủy Tinh", Slug = "hoa-kho-mix", Description = "Hoa khô nghệ thuật cắm sẵn", CategoryId = catHoaKho.Id, IsActive = true },
+                    new Product { Id = Guid.NewGuid(), Name = "Bó Hoa Oải Hương", Slug = "bo-hoa-oai-huong", Description = "Hoa oải hương khô thơm lâu", CategoryId = catHoaKho.Id, IsActive = true },
+                    new Product { Id = Guid.NewGuid(), Name = "Bó Hoa Sen Đá Khô", Slug = "bo-hoa-sen-da", Description = "Sen đá khô trang trí độc đáo", CategoryId = catHoaKho.Id, IsActive = true },
+                    new Product { Id = Guid.NewGuid(), Name = "Bó Hoa Lúa Mạch Khô", Slug = "bo-hoa-lua-mach", Description = "Lúa mạch khô mang lại may mắn", CategoryId = catHoaKho.Id, IsActive = true },
+                    new Product { Id = Guid.NewGuid(), Name = "Vòng Hoa Khô Treo Cửa", Slug = "vong-hoa-kho", Description = "Vòng hoa trang trí nhà cửa", CategoryId = catHoaKho.Id, IsActive = true },
+                    new Product { Id = Guid.NewGuid(), Name = "Lẵng Hoa Yêu Thương", Slug = "lang-hoa-yeu-thuong", Description = "Lẵng hoa chúc mừng", CategoryId = catBoHoa.Id, IsActive = true },
+                    new Product { Id = Guid.NewGuid(), Name = "Bó Hoa Hồng Rực Rỡ", Slug = "bo-hoa-hong", Description = "Bó hoa hồng lãng mạn", CategoryId = catBoHoa.Id, IsActive = true },
+                    new Product { Id = Guid.NewGuid(), Name = "Bó Hoa Cúc Họa Mi", Slug = "bo-hoa-cuc", Description = "Hoa cúc họa mi tinh khôi", CategoryId = catGioHoa.Id, IsActive = true }
+                };
+                context.Products.AddRange(products);
+
+                var images = new string[] { "hoakho1.jpg", "hoakho2.jpg", "hoakho3.jpg", "hoakho4.jpg", "hoakho5.jpg", "hoakho6.jpg", "banner.jpg", "banner1.jpeg", "banner2.jpeg" };
+                
+                for(int i = 0; i < 9; i++)
+                {
+                    context.ProductVariants.Add(new ProductVariant { Id = Guid.NewGuid(), ProductId = products[i].Id, SKU = "SKU-00" + (i+1), Price = 250000 + (i * 50000), Stock = 100, IsActive = true });
+                    context.ProductImages.Add(new ProductImage { Id = Guid.NewGuid(), ProductId = products[i].Id, ImageUrl = "/images/" + images[i], IsPrimary = true });
+                }
+
                 await context.SaveChangesAsync();
             }
         }
