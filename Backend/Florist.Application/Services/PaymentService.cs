@@ -161,13 +161,18 @@ namespace Florist.Application.Services
             // Let's modify OrderRepo to use .Contains() or just do it here if we assume the user might add noise.
             // Actually, we can fetch the order by PaymentReference but wait, we don't know the exact PaymentReference, we only have request.content.
             // Let's parse all potential FL... words from content.
-            var words = request.content.Split(new[] { ' ', '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
+            // Split on common bank message separators including dots used by MBBank (e.g. "FL56S3FBW.CT tu")
+            var words = request.content.Split(new[] { ' ', '-', '_', '.', '/', '\\', ':', ';', ',', '|' }, StringSplitOptions.RemoveEmptyEntries);
             Order? order = null;
             foreach (var word in words)
             {
-                if (word.StartsWith("FL") && word.Length > 2)
+                // Clean any remaining non-alphanumeric chars from word edges
+                var cleanWord = word.Trim().ToUpper();
+                if (cleanWord.StartsWith("FL") && cleanWord.Length >= 9)
                 {
-                    order = await _orderRepo.GetOrderByPaymentReferenceAsync(word.ToUpper());
+                    // Take only first 9 chars (FL + 7 alphanum) in case of concatenation
+                    var candidate = cleanWord.Length >= 9 ? cleanWord.Substring(0, 9) : cleanWord;
+                    order = await _orderRepo.GetOrderByPaymentReferenceAsync(candidate);
                     if (order != null) break;
                 }
             }
