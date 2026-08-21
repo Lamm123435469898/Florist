@@ -18,6 +18,15 @@ using AspNetCoreRateLimit;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Disable file watching for config sources to avoid Linux inotify limit exhaustion on Render containers.
+// Config is loaded from environment variables at startup; hot-reload is not needed in production.
+foreach (var source in builder.Configuration.Sources
+    .OfType<Microsoft.Extensions.Configuration.FileConfigurationSource>()
+    .ToList())
+{
+    source.ReloadOnChange = false;
+}
+
 // Configure Serilog
 builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
