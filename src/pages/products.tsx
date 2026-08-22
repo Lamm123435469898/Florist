@@ -17,6 +17,7 @@ interface Product {
   image_url: string | null;
   variant_id?: string;
   category: string | null;
+  stock?: number;
 }
 
 const Products = () => {

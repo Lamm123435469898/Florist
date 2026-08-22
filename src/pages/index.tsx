@@ -20,6 +20,7 @@ interface Product {
   image_url: string | null;
   variant_id?: string;
   category: string | null;
+  stock?: number;
 }
 
 const Index = () => {
@@ -172,7 +173,7 @@ const Index = () => {
                   <AnimatedProductCard 
                     key={p.id} 
                     id={p.id} variantId={p.variant_id} stock={p.stock}
-                    variantId={p.variant_id}
+
                     name={p.name}
                     price={p.price}
                     imageUrl={p.image_url}
