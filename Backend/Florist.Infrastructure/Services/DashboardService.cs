@@ -28,11 +28,11 @@ namespace Florist.Infrastructure.Services
             
             var totalRevenue = await _context.Orders
                 .Where(o => o.Status != Florist.Domain.Enums.OrderStatus.CANCELLED)
-                .SumAsync(o => o.FinalTotal);
+                .SumAsync(o => (decimal?)o.FinalTotal) ?? 0m;
 
             var todayRevenue = await _context.Orders
                 .Where(o => o.Status != Florist.Domain.Enums.OrderStatus.CANCELLED && o.CreatedAt >= today)
-                .SumAsync(o => o.FinalTotal);
+                .SumAsync(o => (decimal?)o.FinalTotal) ?? 0m;
 
             var pendingOrders = await _context.Orders.CountAsync(o => o.Status == Florist.Domain.Enums.OrderStatus.PENDING);
             var processingOrders = await _context.Orders.CountAsync(o => o.Status == Florist.Domain.Enums.OrderStatus.PROCESSING);

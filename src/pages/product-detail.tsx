@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { apiClient } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, ArrowLeft, Heart, Package, Shield, Truck } from "lucide-react";
+import { ShoppingBag, ArrowLeft, Heart, Package, Shield, Truck, Star } from "lucide-react";
 import { AnimatedNavbar } from "@/components/animated-navbar";
 import { AnimatedFooter } from "@/components/animated-footer";
 import VerticalFlowerLine from "@/components/vertical-flower-line";
 import { motion } from "framer-motion";
 import { useCart } from "@/contexts/cart-context";
+import { useAuth } from "@/contexts/auth-context";
+import { toast } from "sonner";
 
 interface Product {
   id: string;
@@ -29,12 +31,88 @@ const ProductDetail = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
+  
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [togglingWishlist, setTogglingWishlist] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchProduct(id);
+      fetchReviews(id);
+      if (isAuthenticated) {
+        checkWishlist(id);
+      }
     }
-  }, [id]);
+  }, [id, isAuthenticated]);
+
+  const checkWishlist = async (productId: string) => {
+    try {
+      const { data } = await apiClient.get(`/wishlist/${productId}/check`);
+      if (data.success) {
+        setIsInWishlist(data.data);
+      }
+    } catch (error) {
+      console.error("Error checking wishlist:", error);
+    }
+  };
+
+  const toggleWishlist = async () => {
+    if (!isAuthenticated) {
+      toast.error("Vui lòng đăng nhập để lưu sản phẩm yêu thích");
+      return;
+    }
+    if (!id) return;
+
+    try {
+      setTogglingWishlist(true);
+      const { data } = await apiClient.post("/wishlist/toggle", { productId: id });
+      if (data.success) {
+        setIsInWishlist(data.data.isInWishlist);
+        toast.success(data.data.message);
+      }
+    } catch (error) {
+      toast.error("Có lỗi xảy ra khi cập nhật danh sách yêu thích");
+    } finally {
+      setTogglingWishlist(false);
+    }
+  };
+
+  const fetchReviews = async (productId: string) => {
+    try {
+      const { data } = await apiClient.get(`/reviews/product/${productId}?page=1&pageSize=50`);
+      if (data.success) {
+        setReviews(data.data.items || []);
+      }
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    }
+  };
+
+  const submitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id) return;
+    try {
+      setSubmittingReview(true);
+      const { data } = await apiClient.post("/reviews", {
+        productId: id,
+        rating: reviewForm.rating,
+        comment: reviewForm.comment
+      });
+      if (data.success) {
+        toast.success("Cảm ơn bạn đã đánh giá!");
+        setReviewForm({ rating: 5, comment: "" });
+        fetchReviews(id);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Có lỗi xảy ra khi gửi đánh giá");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const fetchProduct = async (productId: string) => {
     setLoading(true);
@@ -230,9 +308,13 @@ const ProductDetail = () => {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="w-14 h-14 p-0 rounded-none border-primary/20 text-primary hover:bg-primary/5 flex items-center justify-center"
+                    className={`w-14 h-14 p-0 rounded-none border-primary/20 hover:bg-primary/5 flex items-center justify-center transition-colors ${
+                      isInWishlist ? "text-rose-500 bg-rose-50" : "text-primary"
+                    }`}
+                    onClick={toggleWishlist}
+                    disabled={togglingWishlist}
                   >
-                    <Heart className="h-5 w-5" />
+                    <Heart className={`h-5 w-5 ${isInWishlist ? "fill-current" : ""}`} />
                   </Button>
                 </div>
               </div>
@@ -253,6 +335,74 @@ const ProductDetail = () => {
                 </div>
               </div>
             </motion.div>
+          </div>
+
+          {/* Reviews Section */}
+          <div className="mt-24 max-w-4xl mx-auto">
+            <h2 className="text-3xl font-serif font-bold text-foreground mb-8 text-center">Đánh giá sản phẩm</h2>
+            
+            {isAuthenticated ? (
+              <form onSubmit={submitReview} className="bg-white p-6 rounded-lg shadow-sm border border-border mb-12">
+                <h3 className="text-lg font-medium mb-4">Viết đánh giá của bạn</h3>
+                <div className="mb-4 flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                      className={`transition-colors ${reviewForm.rating >= star ? "text-yellow-400" : "text-slate-200"}`}
+                    >
+                      <Star className="h-6 w-6 fill-current" />
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  required
+                  value={reviewForm.comment}
+                  onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                  placeholder="Chia sẻ cảm nhận của bạn về sản phẩm này..."
+                  className="w-full px-4 py-3 border border-border rounded-lg mb-4 h-24 resize-none focus:outline-none focus:border-primary"
+                ></textarea>
+                <Button type="submit" disabled={submittingReview} className="bg-primary text-white">
+                  {submittingReview ? "Đang gửi..." : "Gửi đánh giá"}
+                </Button>
+              </form>
+            ) : (
+              <div className="bg-secondary/30 p-6 rounded-lg text-center mb-12">
+                <p className="text-foreground/70 mb-4">Bạn cần đăng nhập để viết đánh giá.</p>
+                <Link to="/login">
+                  <Button variant="outline" className="border-primary text-primary">Đăng nhập</Button>
+                </Link>
+              </div>
+            )}
+
+            <div className="space-y-6">
+              {reviews.length > 0 ? (
+                reviews.map((review) => (
+                  <div key={review.id} className="bg-white p-6 rounded-lg shadow-sm border border-border">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <span className="font-semibold text-foreground">{review.userFullName}</span>
+                        <div className="flex gap-1 mt-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`h-4 w-4 ${review.rating >= star ? "text-yellow-400 fill-current" : "text-slate-200 fill-current"}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <span className="text-xs text-foreground/50">
+                        {new Date(review.createdAt).toLocaleDateString("vi-VN")}
+                      </span>
+                    </div>
+                    <p className="text-foreground/70 mt-3">{review.comment}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-foreground/50 py-8">Chưa có đánh giá nào cho sản phẩm này.</p>
+              )}
+            </div>
           </div>
         </div>
       </section>

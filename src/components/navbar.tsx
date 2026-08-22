@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { ShoppingCart, Search, MapPin, Phone, Mail, User, LogOut, LayoutDashboard } from "lucide-react";
+import { ShoppingCart, Search, MapPin, Phone, Mail, User, LogOut, LayoutDashboard, Heart } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -129,6 +129,18 @@ const Navbar = () => {
                   <DropdownMenuItem onClick={() => navigate("/cart")}>
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     Giỏ hàng
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                    <User className="h-4 w-4 mr-2" />
+                    Tài khoản của tôi
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/orders")}>
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Đơn hàng của tôi
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/wishlist")}>
+                    <Heart className="h-4 w-4 mr-2" />
+                    Sản phẩm yêu thích
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive">

@@ -44,7 +44,8 @@ const statusOptions = [
   { value: "confirmed", label: "Đã xác nhận" },
   { value: "processing", label: "Đang xử lý" },
   { value: "shipped", label: "Đang giao" },
-  { value: "delivered", label: "Đã giao" }
+  { value: "delivered", label: "Đã giao" },
+  { value: "cancelled", label: "Đã hủy" }
 ];
 
 function getStatusColor(status: string) {
@@ -91,7 +92,15 @@ export default function AdminOrders() {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      const { data } = await apiClient.put(`/orders/admin/${orderId}/status`, { status: newStatus });
+      let data;
+      if (newStatus === "cancelled") {
+        const res = await apiClient.post(`/orders/admin/${orderId}/cancel`);
+        data = res.data;
+      } else {
+        const res = await apiClient.put(`/orders/admin/${orderId}/status`, { status: newStatus });
+        data = res.data;
+      }
+
       if (data.success) {
         toast.success("Đã cập nhật trạng thái đơn hàng");
         fetchOrders();

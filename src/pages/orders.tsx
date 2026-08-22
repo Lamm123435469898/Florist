@@ -7,6 +7,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { apiClient } from "@/lib/api-client";
 import { Package, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface OrderItem {
   id: string;
@@ -63,6 +65,20 @@ export default function Orders() {
       console.error("Error fetching orders:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?")) return;
+    
+    try {
+      const { data } = await apiClient.post(`/orders/${orderId}/cancel`);
+      if (data.success) {
+        toast.success("Đã hủy đơn hàng thành công");
+        fetchOrders(); // Refresh
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Không thể hủy đơn hàng");
     }
   };
 
@@ -166,7 +182,18 @@ export default function Orders() {
                 </div>
 
                 {/* Tổng kết */}
-                <div className="bg-secondary/5 p-6 flex justify-end items-center border-t border-border">
+                <div className="bg-secondary/5 p-6 flex flex-col sm:flex-row justify-between items-center border-t border-border gap-4">
+                  <div>
+                    {order.status === 'pending' && (
+                      <Button 
+                        variant="outline" 
+                        className="text-destructive border-destructive hover:bg-destructive hover:text-white"
+                        onClick={() => handleCancelOrder(order.id)}
+                      >
+                        Hủy đơn hàng
+                      </Button>
+                    )}
+                  </div>
                   <div className="text-right flex items-center gap-6">
                     <span className="text-foreground/70 text-sm">Tổng cộng:</span>
                     <span className="text-2xl font-bold text-accent">

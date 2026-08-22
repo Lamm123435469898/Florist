@@ -22,6 +22,8 @@ const Checkout = lazy(() => import("./pages/checkout"));
 const Payment = lazy(() => import("./pages/payment"));
 const OrderSuccess = lazy(() => import("./pages/order-success"));
 const Orders = lazy(() => import("./pages/orders"));
+const Profile = lazy(() => import("./pages/profile"));
+const Wishlist = lazy(() => import("./pages/wishlist"));
 
 // A generic loading fallback for Suspense
 const Loading = () => (
@@ -76,6 +78,16 @@ export const routers = [
       path: "/register",
       name: 'register',
       element: withSuspense(Register),
+    },
+    {
+      path: "/profile",
+      name: 'profile',
+      element: withSuspense(Profile),
+    },
+    {
+      path: "/wishlist",
+      name: 'wishlist',
+      element: withSuspense(Wishlist),
     },
     {
       path: "/admin",

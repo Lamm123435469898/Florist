@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Florist.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a364dfd4822128225510db3db30bf1607e096233")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f7d4ef1662910b7152f2a6993d9ae1a5998cd1fe")]
 [assembly: System.Reflection.AssemblyProductAttribute("Florist.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Florist.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

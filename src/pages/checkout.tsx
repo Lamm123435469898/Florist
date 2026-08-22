@@ -26,6 +26,11 @@ export default function Checkout() {
     address: "",
     paymentMethod: "COD"
   });
+  
+  const [voucherCode, setVoucherCode] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [validatingVoucher, setValidatingVoucher] = useState(false);
+  const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
 
   useEffect(() => {
     if (!cartLoading && items.length === 0) {
@@ -36,6 +41,37 @@ export default function Checkout() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleApplyVoucher = async () => {
+    if (!voucherCode.trim()) {
+      toast.error("Vui lòng nhập mã giảm giá");
+      return;
+    }
+    
+    try {
+      setValidatingVoucher(true);
+      const { data } = await apiClient.post("/vouchers/validate", {
+        code: voucherCode,
+        orderTotal: totalPrice
+      });
+      
+      if (data.success && data.data.isValid) {
+        setDiscountAmount(data.data.discountAmount);
+        setAppliedVoucher(voucherCode);
+        toast.success("Áp dụng mã giảm giá thành công");
+      } else {
+        toast.error(data.data.message || "Mã giảm giá không hợp lệ");
+        setDiscountAmount(0);
+        setAppliedVoucher(null);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi kiểm tra mã");
+      setDiscountAmount(0);
+      setAppliedVoucher(null);
+    } finally {
+      setValidatingVoucher(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,7 +91,8 @@ export default function Checkout() {
         customerEmail: formData.email,
         customerPhone: formData.phone,
         shippingAddress: formData.address,
-        paymentMethod: formData.paymentMethod
+        paymentMethod: formData.paymentMethod,
+        voucherCode: appliedVoucher
       });
 
       if (data.success) {
@@ -245,13 +282,60 @@ export default function Checkout() {
                   <span>Tạm tính ({items.length} sản phẩm)</span>
                   <span className="font-medium text-foreground">{totalPrice.toLocaleString('vi-VN')} ₫</span>
                 </div>
+                
+                {/* Voucher Input Section */}
+                <div className="pt-2 pb-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Mã giảm giá (nếu có)"
+                      value={voucherCode}
+                      onChange={(e) => setVoucherCode(e.target.value)}
+                      disabled={validatingVoucher || !!appliedVoucher}
+                      className="rounded-sm border-border focus-visible:ring-primary/20 bg-white"
+                    />
+                    {appliedVoucher ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-sm whitespace-nowrap text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+                        onClick={() => {
+                          setVoucherCode("");
+                          setAppliedVoucher(null);
+                          setDiscountAmount(0);
+                          toast.info("Đã gỡ mã giảm giá");
+                        }}
+                      >
+                        Hủy
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-sm whitespace-nowrap text-primary border-primary/20 hover:bg-primary/5"
+                        onClick={handleApplyVoucher}
+                        disabled={validatingVoucher || !voucherCode.trim()}
+                      >
+                        {validatingVoucher ? <Loader2 className="h-4 w-4 animate-spin" /> : "Áp dụng"}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {appliedVoucher && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Giảm giá (Voucher)</span>
+                    <span className="font-medium">- {discountAmount.toLocaleString('vi-VN')} ₫</span>
+                  </div>
+                )}
+                
                 <div className="flex justify-between text-sm text-foreground/70">
                   <span>Phí vận chuyển</span>
                   <span className="font-medium text-foreground">Miễn phí</span>
                 </div>
+                
                 <div className="flex justify-between text-lg font-bold pt-6 border-t border-border text-foreground">
                   <span>Tổng thanh toán</span>
-                  <span className="text-accent">{totalPrice.toLocaleString('vi-VN')} ₫</span>
+                  <span className="text-accent">{Math.max(0, totalPrice - discountAmount).toLocaleString('vi-VN')} ₫</span>
                 </div>
               </div>
             </div>
