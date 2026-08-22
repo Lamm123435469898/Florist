@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { apiClient } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, ArrowLeft, Heart, Package, Shield, Truck, Star } from "lucide-react";
@@ -25,10 +25,12 @@ interface Product {
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const { addItem } = useCart();
   const { isAuthenticated } = useAuth();
@@ -210,7 +212,7 @@ const ProductDetail = () => {
                 transition={{ duration: 0.6 }}
               >
                 <img
-                  src={activeImage || "https://via.placeholder.com/600x800?text=No+Image"}
+                  src={activeImage || "/placeholder.svg"}
                   alt={product.name}
                   className="w-full h-full object-cover"
                 />
@@ -290,8 +292,9 @@ const ProductDetail = () => {
                 <div className="flex gap-4">
                   <Button
                     size="lg"
-                    className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-none h-14 text-base tracking-wide flex items-center justify-center gap-2 disabled:opacity-50"
-                    disabled={isAdding || product.stock === 0}
+                    variant="outline"
+                    className="flex-1 border-primary text-primary hover:bg-primary/5 rounded-none h-14 text-base tracking-wide flex items-center justify-center gap-2 disabled:opacity-50"
+                    disabled={isAdding || isBuyingNow || product.stock === 0}
                     onClick={async () => {
                       setIsAdding(true);
                       await addItem(product.variant_id || product.id, quantity);
@@ -299,11 +302,28 @@ const ProductDetail = () => {
                     }}
                   >
                     {isAdding ? (
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-r-transparent mr-2" />
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-r-transparent mr-2" />
                     ) : (
                       <ShoppingBag className="h-5 w-5" />
                     )}
                     {isAdding ? "Đang thêm..." : product.stock === 0 ? "Hết hàng" : "Thêm vào giỏ"}
+                  </Button>
+
+                  <Button
+                    size="lg"
+                    className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-none h-14 text-base tracking-wide flex items-center justify-center gap-2 disabled:opacity-50"
+                    disabled={isAdding || isBuyingNow || product.stock === 0}
+                    onClick={async () => {
+                      setIsBuyingNow(true);
+                      await addItem(product.variant_id || product.id, quantity);
+                      setIsBuyingNow(false);
+                      navigate("/checkout");
+                    }}
+                  >
+                    {isBuyingNow ? (
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-r-transparent mr-2" />
+                    ) : null}
+                    {isBuyingNow ? "Đang xử lý..." : "Mua ngay"}
                   </Button>
                   <Button
                     size="lg"

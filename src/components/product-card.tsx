@@ -13,7 +13,7 @@ interface ProductCardProps {
 
 const ProductCard = ({ id, name, price, imageUrl, category, variantId }: ProductCardProps) => {
   const { addItem } = useCart();
-  const fallbackImage = "https://via.placeholder.com/400x500?text=No+Image";
+  const fallbackImage = "/placeholder.svg";
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();

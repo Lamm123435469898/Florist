@@ -91,6 +91,9 @@ const Navbar = () => {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
+            <Link to="/wishlist" className="relative text-muted-foreground hover:text-rose-500 transition-colors">
+              <Heart className="h-5 w-5" />
+            </Link>
             <Link to="/cart" className="relative text-muted-foreground hover:text-primary transition-colors">
               <ShoppingCart className="h-5 w-5" />
               <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">

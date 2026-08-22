@@ -113,7 +113,7 @@ const Cart = () => {
                 >
                   <div className="w-24 h-32 sm:w-32 sm:h-40 bg-secondary/30 flex-shrink-0">
                     <img 
-                      src={item.products?.image_url || "https://via.placeholder.com/150"} 
+                      src={item.products?.image_url || "/placeholder.svg"} 
                       alt={item.products?.name}
                       className="w-full h-full object-cover"
                     />

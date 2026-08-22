@@ -22,7 +22,7 @@ export function AnimatedProductCard({
   variantId,
   className = "" 
 }: AnimatedCardProps) {
-  const fallbackImage = "https://via.placeholder.com/400x500?text=No+Image";
+  const fallbackImage = "/placeholder.svg";
   const { addItem } = useCart();
 
   return (

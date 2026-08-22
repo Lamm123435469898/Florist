@@ -107,7 +107,7 @@ export default function Wishlist() {
               <div key={item.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 group">
                 <Link to={`/products/${item.productId}`} className="block relative aspect-[4/5] overflow-hidden">
                   <img
-                    src={item.imageUrl || "https://via.placeholder.com/400x500?text=No+Image"}
+                    src={item.imageUrl || "/placeholder.svg"}
                     alt={item.productName}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />

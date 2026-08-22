@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { AnimatedNavbar } from "@/components/animated-navbar";
 import { AnimatedFooter } from "@/components/animated-footer";
 import VerticalFlowerLine from "@/components/vertical-flower-line";
@@ -25,11 +25,14 @@ interface Order {
   created_at: string;
   total_amount: number;
   status: string;
+  payment_method?: string;
+  payment_status?: string;
   order_items?: OrderItem[];
 }
 
 export default function Orders() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,6 +52,8 @@ export default function Orders() {
           created_at: o.createdAt,
           total_amount: o.finalTotal,
           status: o.status.toLowerCase(),
+          payment_method: o.paymentMethod,
+          payment_status: o.paymentStatus,
           order_items: (o.orderItems || []).map((item: any) => ({
             id: item.id,
             quantity: item.quantity,
@@ -79,6 +84,27 @@ export default function Orders() {
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Không thể hủy đơn hàng");
+    }
+  };
+
+  const handlePayNow = async (orderId: string) => {
+    try {
+      setLoading(true);
+      const paymentRes = await apiClient.post("/payments/create", {
+        orderId: orderId,
+        paymentMethod: "SEPAY"
+      });
+      
+      if (paymentRes.data.success) {
+        navigate(`/payment?id=${orderId}`, { 
+          state: { paymentData: paymentRes.data.data }
+        });
+      } else {
+        toast.error("Không thể tạo phiên thanh toán mới");
+      }
+    } catch (error) {
+      toast.error("Đã xảy ra lỗi khi tạo thanh toán");
+      setLoading(false);
     }
   };
 
@@ -162,7 +188,7 @@ export default function Orders() {
                       <div key={item.id} className="flex gap-6 items-center">
                         <div className="w-16 h-20 bg-secondary/30 rounded-sm overflow-hidden flex-shrink-0">
                           <img 
-                            src={item.products?.image_url || "https://via.placeholder.com/150"} 
+                            src={item.products?.image_url || "/placeholder.svg"} 
                             alt={item.products?.name} 
                             className="w-full h-full object-cover"
                           />
@@ -183,7 +209,7 @@ export default function Orders() {
 
                 {/* Tổng kết */}
                 <div className="bg-secondary/5 p-6 flex flex-col sm:flex-row justify-between items-center border-t border-border gap-4">
-                  <div>
+                  <div className="flex gap-2">
                     {order.status === 'pending' && (
                       <Button 
                         variant="outline" 
@@ -191,6 +217,15 @@ export default function Orders() {
                         onClick={() => handleCancelOrder(order.id)}
                       >
                         Hủy đơn hàng
+                      </Button>
+                    )}
+                    {order.status === 'pending' && order.payment_method === 'SEPAY' && order.payment_status !== 'COMPLETED' && (
+                      <Button 
+                        variant="default"
+                        className="bg-[hsl(154,35%,30%)] hover:bg-[hsl(154,35%,25%)] text-white"
+                        onClick={() => handlePayNow(order.id)}
+                      >
+                        Thanh toán ngay
                       </Button>
                     )}
                   </div>

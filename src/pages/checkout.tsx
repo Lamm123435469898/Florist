@@ -259,7 +259,7 @@ export default function Checkout() {
                   <div key={item.id} className="flex gap-4">
                     <div className="h-20 w-16 bg-secondary/30 rounded-sm overflow-hidden flex-shrink-0">
                       <img 
-                        src={item.products?.image_url || "https://via.placeholder.com/150"} 
+                        src={item.products?.image_url || "/placeholder.svg"} 
                         alt={item.products?.name} 
                         className="w-full h-full object-cover" 
                       />
