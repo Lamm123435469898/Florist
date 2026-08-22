@@ -16,6 +16,10 @@ using System.Text;
 using Serilog;
 using AspNetCoreRateLimit;
 
+// Fix Render deployment inotify limit exhaustion
+Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "1");
+Environment.SetEnvironmentVariable("DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE", "false");
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Disable file watching for config sources to avoid Linux inotify limit exhaustion on Render containers.

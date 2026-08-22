@@ -10,6 +10,7 @@ interface AnimatedCardProps {
   price: number;
   imageUrl: string | null;
   category?: string | null;
+  stock?: number;
   className?: string;
 }
 
@@ -20,6 +21,7 @@ export function AnimatedProductCard({
   imageUrl, 
   category,
   variantId,
+  stock = 100,
   className = "" 
 }: AnimatedCardProps) {
   const fallbackImage = "/placeholder.svg";
@@ -56,16 +58,17 @@ export function AnimatedProductCard({
             </button>
           </Link>
           <button
-            className="flex-1 bg-primary text-white hover:bg-primary/90 transition-colors py-2.5 rounded-sm flex items-center justify-center gap-2 text-sm font-medium shadow-sm"
+            className="flex-1 bg-primary text-white hover:bg-primary/90 transition-colors py-2.5 rounded-sm flex items-center justify-center gap-2 text-sm font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Thêm vào giỏ"
+            disabled={stock === 0}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              addItem(variantId || id);
+              if (stock > 0) addItem(variantId || id);
             }}
           >
             <ShoppingBag className="h-4 w-4" />
-            Mua ngay
+            {stock === 0 ? "Hết hàng" : "Mua ngay"}
           </button>
         </div>
 

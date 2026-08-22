@@ -220,10 +220,12 @@ const Products = () => {
                   <AnimatedProductCard
                     key={product.id}
                     id={product.id}
+                    variantId={product.variant_id}
                     name={product.name}
                     price={product.price}
                     imageUrl={product.image_url}
                     category={product.category}
+                    stock={product.stock}
                   />
                 ))}
               </motion.div>

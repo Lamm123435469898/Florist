@@ -9,7 +9,8 @@ import {
   LogOut, 
   LayoutDashboard,
   Menu,
-  X
+  X,
+  Heart
 } from "lucide-react";
 import { Button } from "./ui/button";
 import {
@@ -121,6 +122,10 @@ export function AnimatedNavbar() {
             <button className="text-gray-500 hover:text-primary transition-colors">
               <Search className="h-5 w-5" strokeWidth={1.5} />
             </button>
+            
+            <Link to="/wishlist" className="relative text-gray-500 hover:text-rose-500 transition-colors">
+              <Heart className="h-5 w-5" strokeWidth={1.5} />
+            </Link>
 
             <Link to="/cart" className="relative text-gray-500 hover:text-primary transition-colors">
               <ShoppingCart className="h-5 w-5" strokeWidth={1.5} />
@@ -152,6 +157,14 @@ export function AnimatedNavbar() {
                         Trang quản trị
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">
+                      <User className="h-4 w-4 mr-2 text-gray-500" />
+                      Tài khoản của tôi
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/wishlist")} className="cursor-pointer">
+                      <Heart className="h-4 w-4 mr-2 text-gray-500" />
+                      Sản phẩm yêu thích
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => navigate("/orders")} className="cursor-pointer">
                       <ShoppingCart className="h-4 w-4 mr-2 text-gray-500" />
                       Đơn hàng của tôi

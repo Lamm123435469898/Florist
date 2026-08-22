@@ -36,7 +36,8 @@ const Index = () => {
             name: item.name,
             price: item.variants?.[0]?.price || 0,
             image_url: item.images?.find((img: any) => img.isPrimary)?.imageUrl || item.images?.[0]?.imageUrl || null,
-            category: item.categoryName
+            category: item.categoryName,
+              stock: item.variants?.[0]?.stock || 0
           }));
           setProducts(mappedProducts);
         }
@@ -170,12 +171,12 @@ const Index = () => {
               ? products.map((p, i) => (
                   <AnimatedProductCard 
                     key={p.id} 
-                    id={p.id}
+                    id={p.id} variantId={p.variant_id} stock={p.stock}
+                    variantId={p.variant_id}
                     name={p.name}
                     price={p.price}
                     imageUrl={p.image_url}
                     category={p.category}
-                    variantId={p.variant_id}
                   />
                 ))
               : [hoakho1, hoakho2, hoakho1, hoakho2].map((img, i) => (
