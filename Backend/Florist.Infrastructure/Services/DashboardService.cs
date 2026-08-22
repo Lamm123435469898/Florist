@@ -40,8 +40,12 @@ namespace Florist.Infrastructure.Services
             var deliveredOrders = await _context.Orders.CountAsync(o => o.Status == Florist.Domain.Enums.OrderStatus.DELIVERED);
 
             var sevenDaysAgo = today.AddDays(-6);
-            var revenueByDate = await _context.Orders
+            var recentOrders = await _context.Orders
                 .Where(o => o.Status != Florist.Domain.Enums.OrderStatus.CANCELLED && o.CreatedAt >= sevenDaysAgo)
+                .Select(o => new { o.CreatedAt, o.FinalTotal })
+                .ToListAsync();
+
+            var revenueByDate = recentOrders
                 .GroupBy(o => o.CreatedAt.Date)
                 .Select(g => new RevenueByDateDto
                 {
@@ -49,7 +53,7 @@ namespace Florist.Infrastructure.Services
                     Revenue = g.Sum(o => o.FinalTotal)
                 })
                 .OrderBy(r => r.Date)
-                .ToListAsync();
+                .ToList();
 
             var topProducts = await _context.OrderItems
                 .Where(oi => oi.Order != null && oi.Order.Status != Florist.Domain.Enums.OrderStatus.CANCELLED)
