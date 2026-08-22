@@ -123,8 +123,15 @@ const Contact = () => {
                 </div>
               </div>
 
-              <div className="aspect-video bg-secondary/30 rounded-sm w-full">
-                {/* Map placeholder */}
+              <div className="aspect-video bg-secondary/30 rounded-sm w-full overflow-hidden">
+                <iframe 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.424167419741!2d106.69830531474853!3d10.77878849231991!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f492b49c0fb%3A0x8e8334c9c1b74a38!2sDistrict%201%2C%20Ho%2C%20Chi%20Minh%20City%2C%20Vietnam!5e0!3m2!1sen!2s!4v1622340570691!5m2!1sen!2s" 
+                  width="100%" 
+                  height="100%" 
+                  style={{ border: 0 }} 
+                  allowFullScreen={true} 
+                  loading="lazy">
+                </iframe>
               </div>
             </motion.div>
 

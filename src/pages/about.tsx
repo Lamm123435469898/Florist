@@ -3,6 +3,7 @@ import { AnimatedFooter } from "@/components/animated-footer";
 import VerticalFlowerLine from "@/components/vertical-flower-line";
 import { Leaf, Heart, Users, Shield } from "lucide-react";
 import { motion } from "framer-motion";
+import hoakho5 from "@/images/hoakho5.jpg";
 
 const About = () => {
   return (
@@ -64,7 +65,11 @@ const About = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              {/* placeholder for image */}
+              <img 
+                src={hoakho5} 
+                alt="Story" 
+                className="w-full h-full object-cover"
+              />
             </motion.div>
           </div>
         </div>

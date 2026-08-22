@@ -11,7 +11,7 @@ const Footer = () => {
           <div className="lg:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <img
-                src="https://grazia-prod.oss-ap-southeast-1.aliyuncs.com/resources/uid_100034954/66ed.jpg"
+                src="/placeholder.svg"
                 alt="Florist"
                 className="h-10 w-10 rounded-full object-cover"
               />
