@@ -10,8 +10,14 @@ const Contact = lazy(() => import("./pages/contact"));
 const Login = lazy(() => import("./pages/login"));
 const Register = lazy(() => import("./pages/register"));
 const AdminDashboard = lazy(() => import("./pages/admin/dashboard"));
+const AdminCategories = lazy(() => import("./pages/admin/categories"));
 const AdminProducts = lazy(() => import("./pages/admin/products"));
+const AdminInventory = lazy(() => import("./pages/admin/inventory"));
 const AdminOrders = lazy(() => import("./pages/admin/orders"));
+const AdminVouchers = lazy(() => import("./pages/admin/vouchers"));
+const AdminCustomers = lazy(() => import("./pages/admin/customers"));
+const AdminPayments = lazy(() => import("./pages/admin/payments"));
+const AdminAuditLogs = lazy(() => import("./pages/admin/audit-logs"));
 const Checkout = lazy(() => import("./pages/checkout"));
 const Payment = lazy(() => import("./pages/payment"));
 const OrderSuccess = lazy(() => import("./pages/order-success"));
@@ -77,14 +83,44 @@ export const routers = [
       element: withSuspense(AdminDashboard),
     },
     {
+      path: "/admin/categories",
+      name: 'admin-categories',
+      element: withSuspense(AdminCategories),
+    },
+    {
       path: "/admin/products",
       name: 'admin-products',
       element: withSuspense(AdminProducts),
     },
     {
+      path: "/admin/inventory",
+      name: 'admin-inventory',
+      element: withSuspense(AdminInventory),
+    },
+    {
       path: "/admin/orders",
       name: 'admin-orders',
       element: withSuspense(AdminOrders),
+    },
+    {
+      path: "/admin/vouchers",
+      name: 'admin-vouchers',
+      element: withSuspense(AdminVouchers),
+    },
+    {
+      path: "/admin/customers",
+      name: 'admin-customers',
+      element: withSuspense(AdminCustomers),
+    },
+    {
+      path: "/admin/payments",
+      name: 'admin-payments',
+      element: withSuspense(AdminPayments),
+    },
+    {
+      path: "/admin/audit-logs",
+      name: 'admin-audit-logs',
+      element: withSuspense(AdminAuditLogs),
     },
     {
       path: "/checkout",

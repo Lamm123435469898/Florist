@@ -11,6 +11,7 @@ namespace Florist.Domain.Entities
         public string CustomerEmail { get; set; } = string.Empty;
         public string CustomerPhone { get; set; } = string.Empty;
         public string ShippingAddress { get; set; } = string.Empty;
+        public string? Notes { get; set; }
         
         public decimal SubTotal { get; set; }
         public decimal DiscountAmount { get; set; }
@@ -18,6 +19,11 @@ namespace Florist.Domain.Entities
         public decimal FinalTotal { get; set; }
         
         public OrderStatus Status { get; set; } = OrderStatus.PENDING;
+        public ShippingStatus ShippingStatus { get; set; } = ShippingStatus.PENDING;
+        public string? Carrier { get; set; }
+        public string? TrackingNumber { get; set; }
+        public DateTime? ShippedAt { get; set; }
+        public DateTime? DeliveredAt { get; set; }
         
         public Guid UserId { get; set; }
         public User? User { get; set; }

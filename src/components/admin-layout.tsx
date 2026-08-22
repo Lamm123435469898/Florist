@@ -9,6 +9,12 @@ import {
   ChevronRight,
   Menu,
   X,
+  Folder,
+  Archive,
+  Ticket,
+  Users,
+  DollarSign,
+  ShieldAlert
 } from "lucide-react";
 import { useState } from "react";
 import { ProtectedRoute } from "@/components/protected-route";
@@ -20,8 +26,14 @@ interface AdminLayoutProps {
 
 const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/admin/categories", label: "Danh mục", icon: Folder },
   { to: "/admin/products", label: "Sản phẩm", icon: Package },
+  { to: "/admin/inventory", label: "Kho hàng", icon: Archive },
   { to: "/admin/orders", label: "Đơn hàng", icon: ShoppingCart },
+  { to: "/admin/customers", label: "Khách hàng", icon: Users },
+  { to: "/admin/payments", label: "Thanh toán", icon: DollarSign },
+  { to: "/admin/vouchers", label: "Khuyến mãi", icon: Ticket },
+  { to: "/admin/audit-logs", label: "Audit Logs", icon: ShieldAlert },
 ];
 
 function AdminLayoutContent({ children, title }: AdminLayoutProps) {

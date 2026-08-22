@@ -4,6 +4,7 @@ using Florist.Application.Interfaces.Repositories;
 using Florist.Domain.Entities;
 using Florist.Domain.Enums;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Florist.Application.Services
@@ -60,6 +61,21 @@ namespace Florist.Application.Services
                 Quantity = System.Math.Abs(quantity),
                 Note = note
             });
+        }
+
+        public async Task<System.Collections.Generic.List<Florist.Application.DTOs.Inventory.InventoryTransactionDto>> GetTransactionsAsync(Guid variantId)
+        {
+            var transactions = await _inventoryRepo.GetTransactionsAsync(variantId);
+            return transactions.Select(t => new Florist.Application.DTOs.Inventory.InventoryTransactionDto
+            {
+                Id = t.Id,
+                Type = t.Type.ToString(),
+                Quantity = t.Quantity,
+                ReferenceId = t.ReferenceId,
+                Note = t.Note,
+                ProductVariantId = t.ProductVariantId,
+                CreatedAt = t.CreatedAt
+            }).ToList();
         }
     }
 }

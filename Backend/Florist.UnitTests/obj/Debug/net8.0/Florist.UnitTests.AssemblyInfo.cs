@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Florist.UnitTests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c386cc93ca8138f9eaccabc565125e8d748edb2d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2e1f4d3fc0d0d68b1e11a825fc8ddcc0e3086791")]
 [assembly: System.Reflection.AssemblyProductAttribute("Florist.UnitTests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Florist.UnitTests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,279 +1,205 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import { AdminLayout } from "@/components/admin-layout";
-import { useNavigate } from "react-router-dom";
-import { Package, ShoppingCart, Users, TrendingUp, ArrowRight, Clock } from "lucide-react";
-import { motion } from "framer-motion";
+import { Loader2, TrendingUp, Users, ShoppingBag, DollarSign, Package } from "lucide-react";
+import { toast } from "sonner";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+
+interface RevenueByDate {
+  date: string;
+  revenue: number;
+}
+
+interface TopProduct {
+  productName: string;
+  totalSold: number;
+  totalRevenue: number;
+}
 
 interface DashboardStats {
   totalProducts: number;
   totalOrders: number;
   totalUsers: number;
   totalRevenue: number;
-}
-
-interface RecentOrder {
-  id: string;
-  customerName: string;
-  finalTotal: number;
-  status: string;
-  createdAt: string;
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  color,
-  delay,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string | number;
-  color: string;
-  delay: number;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4 }}
-      className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
-    >
-      <div className="flex items-start justify-between mb-4">
-        <div className={`h-10 w-10 rounded-lg ${color} flex items-center justify-center`}>
-          <Icon className="h-5 w-5 text-white" />
-        </div>
-      </div>
-      <p className="text-sm font-medium text-gray-500 mb-1">{label}</p>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-    </motion.div>
-  );
-}
-
-function getStatusBadge(status: string) {
-  const map: Record<string, string> = {
-    pending: "bg-amber-50 text-amber-700 border border-amber-200",
-    confirmed: "bg-blue-50 text-blue-700 border border-blue-200",
-    processing: "bg-purple-50 text-purple-700 border border-purple-200",
-    shipped: "bg-teal-50 text-teal-700 border border-teal-200",
-    delivered: "bg-green-50 text-green-700 border border-green-200",
-    cancelled: "bg-red-50 text-red-700 border border-red-200",
-  };
-  const statusLabel: Record<string, string> = {
-    pending: "Chờ xử lý",
-    confirmed: "Đã xác nhận",
-    processing: "Đang xử lý",
-    shipped: "Đang giao",
-    delivered: "Đã giao",
-    cancelled: "Đã hủy",
-  };
-  const key = status.toLowerCase();
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${map[key] ?? "bg-gray-100 text-gray-600"}`}>
-      {statusLabel[key] ?? status}
-    </span>
-  );
+  todayRevenue: number;
+  pendingOrders: number;
+  processingOrders: number;
+  shippedOrders: number;
+  deliveredOrders: number;
+  revenueByDate: RevenueByDate[];
+  topProducts: TopProduct[];
 }
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalProducts: 0,
-    totalOrders: 0,
-    totalUsers: 0,
-    totalRevenue: 0,
-  });
-  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
-  const [loadingStats, setLoadingStats] = useState(true);
-  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchStats();
-    fetchRecentOrders();
   }, []);
 
   const fetchStats = async () => {
     try {
       const { data } = await apiClient.get("/admin/dashboard/stats");
-      if (data.success && data.data) {
-        setStats({
-          totalProducts: data.data.totalProducts || 0,
-          totalOrders: data.data.totalOrders || 0,
-          totalUsers: data.data.totalUsers || 0,
-          totalRevenue: data.data.totalRevenue || 0,
-        });
+      if (data.success) {
+        setStats(data.data);
       }
-    } catch (error) {
-      console.error("Error fetching stats:", error);
+    } catch {
+      toast.error("Không thể tải dữ liệu thống kê");
     } finally {
-      setLoadingStats(false);
+      setLoading(false);
     }
   };
 
-  const fetchRecentOrders = async () => {
-    try {
-      const { data } = await apiClient.get("/orders/admin?page=1&pageSize=5");
-      if (data.success && data.data?.items) {
-        setRecentOrders(data.data.items.slice(0, 5));
-      }
-    } catch (error) {
-      console.error("Error fetching recent orders:", error);
-    } finally {
-      setLoadingOrders(false);
-    }
-  };
+  if (loading) {
+    return (
+      <AdminLayout title="Tổng quan">
+        <div className="flex h-[60vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[hsl(154,35%,30%)]" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
-  const statCards = [
-    {
-      icon: TrendingUp,
-      label: "Doanh thu",
-      value: loadingStats ? "—" : `${stats.totalRevenue.toLocaleString("vi-VN")} ₫`,
-      color: "bg-[hsl(154,35%,30%)]",
-      delay: 0,
-    },
-    {
-      icon: ShoppingCart,
-      label: "Tổng đơn hàng",
-      value: loadingStats ? "—" : stats.totalOrders,
-      color: "bg-[hsl(350,45%,55%)]",
-      delay: 0.05,
-    },
-    {
-      icon: Package,
-      label: "Sản phẩm",
-      value: loadingStats ? "—" : stats.totalProducts,
-      color: "bg-blue-500",
-      delay: 0.1,
-    },
-    {
-      icon: Users,
-      label: "Người dùng",
-      value: loadingStats ? "—" : stats.totalUsers,
-      color: "bg-purple-500",
-      delay: 0.15,
-    },
-  ];
+  if (!stats) return null;
 
   return (
-    <AdminLayout title="Dashboard">
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
-        {statCards.map((card) => (
-          <StatCard key={card.label} {...card} />
-        ))}
-      </div>
-
-      {/* Recent Orders + Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Orders */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden"
-        >
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-gray-400" />
-              <h2 className="font-semibold text-gray-800">Đơn hàng gần đây</h2>
+    <AdminLayout title="Tổng quan">
+      <div className="space-y-6">
+        
+        {/* Main Stat Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <DollarSign className="w-16 h-16" />
             </div>
-            <button
-              onClick={() => navigate("/admin/orders")}
-              className="flex items-center gap-1 text-sm text-[hsl(154,35%,30%)] hover:text-[hsl(154,35%,20%)] font-medium transition-colors"
-            >
-              Xem tất cả <ArrowRight className="h-3.5 w-3.5" />
-            </button>
+            <p className="text-sm font-medium text-gray-500 mb-2">Doanh thu hôm nay</p>
+            <h3 className="text-2xl font-bold text-gray-900">{stats.todayRevenue?.toLocaleString("vi-VN") || 0} ₫</h3>
+            <p className="text-xs text-[hsl(154,35%,30%)] mt-2 font-medium flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" /> Cập nhật liên tục
+            </p>
+          </div>
+          
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <DollarSign className="w-16 h-16" />
+            </div>
+            <p className="text-sm font-medium text-gray-500 mb-2">Tổng doanh thu</p>
+            <h3 className="text-2xl font-bold text-gray-900">{stats.totalRevenue?.toLocaleString("vi-VN") || 0} ₫</h3>
           </div>
 
-          {loadingOrders ? (
-            <div className="p-6 space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-14 bg-gray-50 rounded-lg animate-pulse" />
-              ))}
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <ShoppingBag className="w-16 h-16" />
             </div>
-          ) : recentOrders.length === 0 ? (
-            <div className="py-16 text-center text-gray-400">
-              <ShoppingCart className="h-10 w-10 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Chưa có đơn hàng nào</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-50">
-              {recentOrders.map((order) => (
-                <div
-                  key={order.id}
-                  className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50/70 transition-colors cursor-pointer"
-                  onClick={() => navigate("/admin/orders")}
-                >
-                  <div className="h-9 w-9 rounded-lg bg-[hsl(40,20%,95%)] flex items-center justify-center flex-shrink-0">
-                    <ShoppingCart className="h-4 w-4 text-[hsl(154,35%,30%)]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{order.customerName}</p>
-                    <p className="text-xs text-gray-400 font-mono">#{order.id.slice(0, 8).toUpperCase()}</p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-semibold text-gray-800">{order.finalTotal.toLocaleString("vi-VN")} ₫</p>
-                    <div className="mt-1">{getStatusBadge(order.status)}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </motion.div>
-
-        {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="bg-white rounded-xl border border-gray-100 shadow-sm p-6"
-        >
-          <h2 className="font-semibold text-gray-800 mb-5">Thao tác nhanh</h2>
-          <div className="space-y-3">
-            <button
-              onClick={() => navigate("/admin/products")}
-              className="w-full flex items-center gap-3 p-3.5 rounded-lg bg-[hsl(40,20%,97%)] hover:bg-[hsl(40,20%,94%)] border border-transparent hover:border-[hsl(40,15%,88%)] transition-all text-left group"
-            >
-              <div className="h-8 w-8 rounded-md bg-[hsl(154,35%,30%)] flex items-center justify-center">
-                <Package className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-800">Thêm sản phẩm</p>
-                <p className="text-xs text-gray-400">Tạo sản phẩm mới</p>
-              </div>
-              <ArrowRight className="h-4 w-4 text-gray-300 ml-auto group-hover:text-gray-500 transition-colors" />
-            </button>
-
-            <button
-              onClick={() => navigate("/admin/orders")}
-              className="w-full flex items-center gap-3 p-3.5 rounded-lg bg-[hsl(40,20%,97%)] hover:bg-[hsl(40,20%,94%)] border border-transparent hover:border-[hsl(40,15%,88%)] transition-all text-left group"
-            >
-              <div className="h-8 w-8 rounded-md bg-[hsl(350,45%,55%)] flex items-center justify-center">
-                <ShoppingCart className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-800">Xử lý đơn hàng</p>
-                <p className="text-xs text-gray-400">Cập nhật trạng thái</p>
-              </div>
-              <ArrowRight className="h-4 w-4 text-gray-300 ml-auto group-hover:text-gray-500 transition-colors" />
-            </button>
-
-            <button
-              onClick={() => navigate("/")}
-              className="w-full flex items-center gap-3 p-3.5 rounded-lg bg-[hsl(40,20%,97%)] hover:bg-[hsl(40,20%,94%)] border border-transparent hover:border-[hsl(40,15%,88%)] transition-all text-left group"
-            >
-              <div className="h-8 w-8 rounded-md bg-blue-500 flex items-center justify-center">
-                <Users className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-800">Xem cửa hàng</p>
-                <p className="text-xs text-gray-400">Trang khách hàng</p>
-              </div>
-              <ArrowRight className="h-4 w-4 text-gray-300 ml-auto group-hover:text-gray-500 transition-colors" />
-            </button>
+            <p className="text-sm font-medium text-gray-500 mb-2">Tổng đơn hàng</p>
+            <h3 className="text-2xl font-bold text-gray-900">{stats.totalOrders}</h3>
           </div>
-        </motion.div>
+
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <Users className="w-16 h-16" />
+            </div>
+            <p className="text-sm font-medium text-gray-500 mb-2">Tổng khách hàng</p>
+            <h3 className="text-2xl font-bold text-gray-900">{stats.totalUsers}</h3>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Revenue Chart */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm lg:col-span-2">
+            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-6">Doanh thu 7 ngày qua</h3>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={stats.revenueByDate || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(154, 35%, 30%)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(154, 35%, 30%)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} 
+                         tickFormatter={(val) => {
+                           if (!val) return "";
+                           const d = new Date(val);
+                           return `${d.getDate()}/${d.getMonth()+1}`;
+                         }} 
+                  />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} 
+                         tickFormatter={(val) => `${(val / 1000000).toFixed(0)}M`} 
+                  />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    formatter={(value: number) => [`${value.toLocaleString('vi-VN')} ₫`, 'Doanh thu']}
+                    labelFormatter={(label) => label ? new Date(label).toLocaleDateString('vi-VN') : ""}
+                  />
+                  <Area type="monotone" dataKey="revenue" stroke="hsl(154, 35%, 30%)" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Order Status Breakdown */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col">
+            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-6">Tình trạng đơn hàng</h3>
+            <div className="flex-1 flex flex-col justify-center space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-orange-50 border border-orange-100">
+                <span className="text-sm font-medium text-orange-700">Chờ xử lý</span>
+                <span className="text-lg font-bold text-orange-700">{stats.pendingOrders || 0}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-blue-50 border border-blue-100">
+                <span className="text-sm font-medium text-blue-700">Đang đóng gói</span>
+                <span className="text-lg font-bold text-blue-700">{stats.processingOrders || 0}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50 border border-purple-100">
+                <span className="text-sm font-medium text-purple-700">Đang giao hàng</span>
+                <span className="text-lg font-bold text-purple-700">{stats.shippedOrders || 0}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-green-50 border border-green-100">
+                <span className="text-sm font-medium text-green-700">Đã giao thành công</span>
+                <span className="text-lg font-bold text-green-700">{stats.deliveredOrders || 0}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Top Products */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-6">Sản phẩm bán chạy nhất</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-gray-500 bg-gray-50 uppercase font-medium border-b border-gray-100">
+                <tr>
+                  <th className="px-5 py-3">Sản phẩm</th>
+                  <th className="px-5 py-3 text-right">Đã bán</th>
+                  <th className="px-5 py-3 text-right">Doanh thu mang lại</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {(stats.topProducts || []).map((p, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-5 py-3 font-medium text-gray-900 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gray-100 flex flex-shrink-0 items-center justify-center text-gray-400">
+                        <Package className="w-4 h-4" />
+                      </div>
+                      <span className="truncate max-w-[300px]">{p.productName}</span>
+                    </td>
+                    <td className="px-5 py-3 text-right font-medium">{p.totalSold}</td>
+                    <td className="px-5 py-3 text-right font-semibold text-[hsl(154,35%,30%)]">{p.totalRevenue.toLocaleString('vi-VN')} ₫</td>
+                  </tr>
+                ))}
+                {(!stats.topProducts || stats.topProducts.length === 0) && (
+                  <tr>
+                    <td colSpan={3} className="px-5 py-8 text-center text-gray-400">Chưa có dữ liệu sản phẩm</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </AdminLayout>
   );

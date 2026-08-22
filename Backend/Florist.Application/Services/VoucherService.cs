@@ -36,14 +36,84 @@ namespace Florist.Application.Services
 
         public async Task<List<VoucherDto>> GetAllVouchersAsync()
         {
-            var voucher = await _voucherRepo.GetByCodeAsync("");
-            // This is a simplified version - in real project use dedicated list method
-            return new List<VoucherDto>();
+            var vouchers = await _voucherRepo.GetAllAsync();
+            return vouchers.Select(v => new VoucherDto
+            {
+                Id = v.Id,
+                Code = v.Code,
+                DiscountType = v.DiscountType.ToString(),
+                DiscountValue = v.DiscountValue,
+                MinimumOrderValue = v.MinimumOrderValue,
+                MaximumDiscount = v.MaximumDiscount,
+                StartDate = v.StartDate,
+                EndDate = v.EndDate,
+                UsageLimit = v.UsageLimit,
+                UsedCount = v.UsedCount,
+                Status = v.Status.ToString()
+            }).ToList();
         }
 
         public async Task<VoucherDto> CreateVoucherAsync(CreateVoucherRequest request)
         {
-            throw new NotImplementedException("Use admin panel or direct DB insert for now.");
+            var existing = await _voucherRepo.GetByCodeAsync(request.Code);
+            if (existing != null) throw new BadRequestException("Voucher code already exists.");
+
+            var voucher = new Voucher
+            {
+                Code = request.Code.ToUpper(),
+                DiscountType = Enum.Parse<VoucherDiscountType>(request.DiscountType),
+                DiscountValue = request.DiscountValue,
+                MinimumOrderValue = request.MinimumOrderValue,
+                MaximumDiscount = request.MaximumDiscount,
+                StartDate = request.StartDate,
+                EndDate = request.EndDate,
+                UsageLimit = request.UsageLimit,
+                Status = VoucherStatus.ACTIVE
+            };
+
+            var created = await _voucherRepo.CreateAsync(voucher);
+            return await MapToDto(created);
+        }
+
+        public async Task<VoucherDto> UpdateVoucherAsync(Guid id, CreateVoucherRequest request)
+        {
+            var voucher = await _voucherRepo.GetByIdAsync(id);
+            if (voucher == null) throw new NotFoundException("Voucher not found.");
+
+            voucher.Code = request.Code.ToUpper();
+            voucher.DiscountType = Enum.Parse<VoucherDiscountType>(request.DiscountType);
+            voucher.DiscountValue = request.DiscountValue;
+            voucher.MinimumOrderValue = request.MinimumOrderValue;
+            voucher.MaximumDiscount = request.MaximumDiscount;
+            voucher.StartDate = request.StartDate;
+            voucher.EndDate = request.EndDate;
+            voucher.UsageLimit = request.UsageLimit;
+
+            var updated = await _voucherRepo.UpdateAsync(voucher);
+            return await MapToDto(updated);
+        }
+
+        public async Task DeleteVoucherAsync(Guid id)
+        {
+            await _voucherRepo.DeleteAsync(id);
+        }
+
+        private Task<VoucherDto> MapToDto(Voucher v)
+        {
+            return Task.FromResult(new VoucherDto
+            {
+                Id = v.Id,
+                Code = v.Code,
+                DiscountType = v.DiscountType.ToString(),
+                DiscountValue = v.DiscountValue,
+                MinimumOrderValue = v.MinimumOrderValue,
+                MaximumDiscount = v.MaximumDiscount,
+                StartDate = v.StartDate,
+                EndDate = v.EndDate,
+                UsageLimit = v.UsageLimit,
+                UsedCount = v.UsedCount,
+                Status = v.Status.ToString()
+            });
         }
     }
 }

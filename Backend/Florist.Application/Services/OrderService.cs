@@ -69,6 +69,7 @@ namespace Florist.Application.Services
                 CustomerEmail = request.CustomerEmail,
                 CustomerPhone = request.CustomerPhone,
                 ShippingAddress = request.ShippingAddress,
+                Notes = request.Notes,
                 SubTotal = subTotal,
                 DiscountAmount = discountAmount,
                 ShippingFee = shippingFee,
@@ -176,6 +177,11 @@ namespace Florist.Application.Services
                     foreach (var item in order.OrderItems!)
                         await _inventoryService.ReleaseStockAsync(item.ProductVariantId, item.Quantity, order.Id.ToString());
                     
+                    if (order.Payment != null && order.Payment.Status == PaymentStatus.PAID)
+                    {
+                        order.Payment.Status = PaymentStatus.REFUNDED;
+                    }
+
                     var updated = await _orderRepo.UpdateAsync(order);
                     await _unitOfWork.CommitTransactionAsync();
                     return MapToDto(updated);
@@ -191,6 +197,38 @@ namespace Florist.Application.Services
                 var updated = await _orderRepo.UpdateAsync(order);
                 return MapToDto(updated);
             }
+        }
+
+        public async Task<OrderDto> UpdateShippingStatusAsync(Guid orderId, UpdateShippingStatusRequest request)
+        {
+            var order = await _orderRepo.GetByIdAsync(orderId)
+                ?? throw new NotFoundException($"Order {orderId} not found.");
+
+            if (!Enum.TryParse<ShippingStatus>(request.ShippingStatus, true, out var newStatus))
+                throw new BadRequestException("Invalid shipping status.");
+
+            // Basic validation
+            if (newStatus == ShippingStatus.DELIVERED && order.ShippingStatus != ShippingStatus.SHIPPING)
+            {
+                throw new BadRequestException("Order must be SHIPPING before it can be DELIVERED.");
+            }
+
+            order.ShippingStatus = newStatus;
+            order.Carrier = request.Carrier ?? order.Carrier;
+            order.TrackingNumber = request.TrackingNumber ?? order.TrackingNumber;
+
+            if (newStatus == ShippingStatus.SHIPPING && order.ShippedAt == null)
+            {
+                order.ShippedAt = DateTime.UtcNow;
+            }
+            else if (newStatus == ShippingStatus.DELIVERED && order.DeliveredAt == null)
+            {
+                order.DeliveredAt = DateTime.UtcNow;
+                order.Status = OrderStatus.DELIVERED;
+            }
+
+            var updated = await _orderRepo.UpdateAsync(order);
+            return MapToDto(updated);
         }
 
         public async Task<OrderDto> CancelOrderAsync(Guid orderId, Guid userId)
@@ -209,6 +247,11 @@ namespace Florist.Application.Services
                 foreach (var item in order.OrderItems!)
                     await _inventoryService.ReleaseStockAsync(item.ProductVariantId, item.Quantity, order.Id.ToString());
                 
+                if (order.Payment != null && order.Payment.Status == PaymentStatus.PAID)
+                {
+                    order.Payment.Status = PaymentStatus.REFUNDED;
+                }
+
                 var updated = await _orderRepo.UpdateAsync(order);
                 await _unitOfWork.CommitTransactionAsync();
                 return MapToDto(updated);
@@ -232,7 +275,16 @@ namespace Florist.Application.Services
             ShippingFee = o.ShippingFee,
             FinalTotal = o.FinalTotal,
             Status = o.Status.ToString(),
+            ShippingStatus = o.ShippingStatus.ToString(),
+            Carrier = o.Carrier,
+            TrackingNumber = o.TrackingNumber,
+            ShippedAt = o.ShippedAt,
+            DeliveredAt = o.DeliveredAt,
             VoucherCode = o.Voucher?.Code,
+            PaymentStatus = o.Payment?.Status.ToString(),
+            PaymentMethod = o.Payment?.PaymentProvider,
+            PaymentReference = o.Payment?.TransactionId,
+            Notes = o.Notes,
             CreatedAt = o.CreatedAt,
             OrderItems = o.OrderItems?.Select(i => new OrderItemDto
             {

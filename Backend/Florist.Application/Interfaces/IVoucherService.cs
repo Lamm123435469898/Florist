@@ -10,5 +10,7 @@ namespace Florist.Application.Interfaces
         Task<ValidateVoucherResponse> ValidateVoucherAsync(Guid userId, ValidateVoucherRequest request);
         Task<List<VoucherDto>> GetAllVouchersAsync();
         Task<VoucherDto> CreateVoucherAsync(CreateVoucherRequest request);
+        Task<VoucherDto> UpdateVoucherAsync(Guid id, CreateVoucherRequest request);
+        Task DeleteVoucherAsync(Guid id);
     }
 }

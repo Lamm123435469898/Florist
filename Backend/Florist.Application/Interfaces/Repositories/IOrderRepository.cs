@@ -22,6 +22,11 @@ namespace Florist.Application.Interfaces.Repositories
         Task<Voucher?> GetByCodeAsync(string code);
         Task<bool> IsValidForUserAsync(string code, Guid userId, decimal orderTotal);
         Task MarkUsedAsync(Guid voucherId, Guid userId, Guid orderId);
+        Task<List<Voucher>> GetAllAsync();
+        Task<Voucher?> GetByIdAsync(Guid id);
+        Task<Voucher> CreateAsync(Voucher voucher);
+        Task<Voucher> UpdateAsync(Voucher voucher);
+        Task DeleteAsync(Guid id);
     }
 }
 

@@ -3,6 +3,7 @@ using Florist.Domain.Entities;
 using Florist.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Florist.Infrastructure.Repositories
@@ -42,6 +43,14 @@ namespace Florist.Infrastructure.Repositories
         {
             _context.InventoryTransactions.Add(transaction);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<System.Collections.Generic.List<InventoryTransaction>> GetTransactionsAsync(Guid variantId)
+        {
+            return await _context.InventoryTransactions
+                .Where(t => t.ProductVariantId == variantId)
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
         }
     }
 }

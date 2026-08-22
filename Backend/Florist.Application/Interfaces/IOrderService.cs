@@ -12,6 +12,7 @@ namespace Florist.Application.Interfaces
         Task<OrderDto> GetOrderByIdAsync(Guid orderId, Guid userId);
         Task<PagedResult<OrderDto>> GetAllOrdersAsync(int page, int pageSize, string? status);
         Task<OrderDto> UpdateOrderStatusAsync(Guid orderId, UpdateOrderStatusRequest request);
+        Task<OrderDto> UpdateShippingStatusAsync(Guid orderId, UpdateShippingStatusRequest request);
         Task<OrderDto> CancelOrderAsync(Guid orderId, Guid userId);
     }
 }

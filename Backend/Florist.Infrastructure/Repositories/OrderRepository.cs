@@ -112,6 +112,34 @@ namespace Florist.Infrastructure.Repositories
             _context.VoucherUsages.Add(new VoucherUsage { VoucherId = voucherId, UserId = userId, OrderId = orderId });
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<Voucher>> GetAllAsync() => await _context.Vouchers.ToListAsync();
+        
+        public async Task<Voucher?> GetByIdAsync(Guid id) => await _context.Vouchers.FindAsync(id);
+        
+        public async Task<Voucher> CreateAsync(Voucher voucher)
+        {
+            _context.Vouchers.Add(voucher);
+            await _context.SaveChangesAsync();
+            return voucher;
+        }
+
+        public async Task<Voucher> UpdateAsync(Voucher voucher)
+        {
+            _context.Vouchers.Update(voucher);
+            await _context.SaveChangesAsync();
+            return voucher;
+        }
+
+        public async Task DeleteAsync(Guid id)
+        {
+            var voucher = await GetByIdAsync(id);
+            if (voucher != null)
+            {
+                _context.Vouchers.Remove(voucher);
+                await _context.SaveChangesAsync();
+            }
+        }
     }
 }
 

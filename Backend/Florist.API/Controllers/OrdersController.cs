@@ -65,5 +65,21 @@ namespace Florist.API.Controllers
             var result = await _orderService.UpdateOrderStatusAsync(id, request);
             return Ok(BaseResponse<OrderDto>.Ok(result, "Order status updated"));
         }
+
+        [HttpPut("admin/{id:guid}/shipping")]
+        [Authorize(Roles = "ADMIN")]
+        public async Task<IActionResult> UpdateShippingStatus(Guid id, [FromBody] UpdateShippingStatusRequest request)
+        {
+            var result = await _orderService.UpdateShippingStatusAsync(id, request);
+            return Ok(BaseResponse<OrderDto>.Ok(result, "Shipping status updated"));
+        }
+
+        [HttpPost("admin/{id:guid}/cancel")]
+        [Authorize(Roles = "ADMIN")]
+        public async Task<IActionResult> AdminCancelOrder(Guid id)
+        {
+            var result = await _orderService.UpdateOrderStatusAsync(id, new UpdateOrderStatusRequest { Status = "CANCELLED" });
+            return Ok(BaseResponse<OrderDto>.Ok(result, "Order cancelled successfully"));
+        }
     }
 }

@@ -21,8 +21,20 @@ interface Order {
   customerEmail: string;
   customerPhone: string;
   shippingAddress: string;
+  subTotal: number;
+  discountAmount: number;
   finalTotal: number;
   status: string;
+  paymentStatus?: string | null;
+  paymentMethod?: string | null;
+  paymentReference?: string | null;
+  voucherCode?: string | null;
+  notes?: string | null;
+  shippingStatus?: string;
+  carrier?: string | null;
+  trackingNumber?: string | null;
+  shippedAt?: string | null;
+  deliveredAt?: string | null;
   createdAt: string;
   orderItems: OrderItem[];
 }
@@ -32,8 +44,7 @@ const statusOptions = [
   { value: "confirmed", label: "Đã xác nhận" },
   { value: "processing", label: "Đang xử lý" },
   { value: "shipped", label: "Đang giao" },
-  { value: "delivered", label: "Đã giao" },
-  { value: "cancelled", label: "Đã hủy" },
+  { value: "delivered", label: "Đã giao" }
 ];
 
 function getStatusColor(status: string) {
@@ -92,6 +103,23 @@ export default function AdminOrders() {
       }
     } catch (error: any) {
       toast.error(error.message || "Không thể cập nhật trạng thái");
+    }
+  };
+
+  const updateShippingStatus = async (orderId: string, payload: { shippingStatus: string; carrier?: string; trackingNumber?: string }) => {
+    try {
+      const { data } = await apiClient.put(`/orders/admin/${orderId}/shipping`, payload);
+      if (data.success) {
+        toast.success("Đã cập nhật trạng thái giao hàng");
+        fetchOrders();
+        if (selectedOrder?.id === orderId) {
+          setSelectedOrder({ ...selectedOrder, ...payload });
+        }
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error.message || "Không thể cập nhật trạng thái giao hàng");
     }
   };
 
@@ -243,6 +271,61 @@ export default function AdminOrders() {
                       </Select>
                     </div>
 
+                    {/* Shipping Tracking Update */}
+                    <div>
+                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Thông tin giao hàng</h3>
+                      <div className="space-y-3">
+                        <Select
+                          value={selectedOrder.shippingStatus?.toLowerCase() || 'pending'}
+                          onValueChange={(val) => updateShippingStatus(selectedOrder.id, { shippingStatus: val })}
+                        >
+                          <SelectTrigger className="w-full bg-gray-50 border-gray-200">
+                            <SelectValue placeholder="Trạng thái giao hàng" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Chờ xử lý</SelectItem>
+                            <SelectItem value="confirmed">Đã xác nhận</SelectItem>
+                            <SelectItem value="processing">Đang đóng gói</SelectItem>
+                            <SelectItem value="shipping">Đang giao hàng</SelectItem>
+                            <SelectItem value="delivered">Đã giao thành công</SelectItem>
+                            <SelectItem value="cancelled">Đã hủy</SelectItem>
+                            <SelectItem value="returned">Hoàn trả</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Đơn vị vận chuyển (VD: VNPost, J&T...)"
+                            className="w-1/2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-[hsl(154,35%,30%)]"
+                            defaultValue={selectedOrder.carrier || ''}
+                            onBlur={(e) => {
+                              if (e.target.value !== selectedOrder.carrier) {
+                                updateShippingStatus(selectedOrder.id, { shippingStatus: selectedOrder.shippingStatus || 'pending', carrier: e.target.value, trackingNumber: selectedOrder.trackingNumber || '' });
+                              }
+                            }}
+                          />
+                          <input
+                            type="text"
+                            placeholder="Mã vận đơn (Tracking)"
+                            className="w-1/2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-[hsl(154,35%,30%)] font-mono"
+                            defaultValue={selectedOrder.trackingNumber || ''}
+                            onBlur={(e) => {
+                              if (e.target.value !== selectedOrder.trackingNumber) {
+                                updateShippingStatus(selectedOrder.id, { shippingStatus: selectedOrder.shippingStatus || 'pending', carrier: selectedOrder.carrier || '', trackingNumber: e.target.value });
+                              }
+                            }}
+                          />
+                        </div>
+                        {(selectedOrder.shippedAt || selectedOrder.deliveredAt) && (
+                          <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded-md border border-gray-100">
+                            {selectedOrder.shippedAt && <div>Gửi hàng: {new Date(selectedOrder.shippedAt).toLocaleString('vi-VN')}</div>}
+                            {selectedOrder.deliveredAt && <div>Đã giao: {new Date(selectedOrder.deliveredAt).toLocaleString('vi-VN')}</div>}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     {/* Customer Info */}
                     <div>
                       <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Thông tin khách hàng</h3>
@@ -271,25 +354,41 @@ export default function AdminOrders() {
                       <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Sản phẩm</h3>
                       <div className="space-y-3">
                         {selectedOrder.orderItems.map((item) => (
-                          <div key={item.id} className="flex gap-3">
-                            <div className="w-12 h-12 rounded-md bg-gray-100 flex-shrink-0 overflow-hidden">
-                              {item.imageUrl ? (
-                                <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <Package className="h-5 w-5 text-gray-300" />
-                                </div>
-                              )}
-                            </div>
+                          <div key={item.id} className="flex gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            {item.imageUrl ? (
+                              <img src={item.imageUrl} alt={item.productName} className="w-12 h-12 object-cover rounded-md flex-shrink-0" />
+                            ) : (
+                              <div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center text-gray-400 flex-shrink-0">
+                                <Package className="h-5 w-5" />
+                              </div>
+                            )}
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">{item.productName}</p>
-                              <p className="text-xs text-gray-500 mt-0.5">SL: {item.quantity} x {item.price.toLocaleString("vi-VN")} ₫</p>
-                            </div>
-                            <div className="text-sm font-semibold text-gray-900">
-                              {(item.quantity * item.price).toLocaleString("vi-VN")} ₫
+                              <h4 className="text-sm font-medium text-gray-900 truncate">{item.productName}</h4>
+                              <p className="text-xs text-gray-500 mt-0.5">Số lượng: {item.quantity}</p>
+                              <p className="text-sm font-semibold text-[hsl(154,35%,30%)] mt-1">{item.price.toLocaleString('vi-VN')} ₫</p>
                             </div>
                           </div>
                         ))}
+                      </div>
+                    </div>
+
+                    {/* Payment Info & Notes */}
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                      {selectedOrder.notes && (
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 mb-1">Ghi chú của khách hàng</p>
+                          <p className="text-sm text-gray-900">{selectedOrder.notes}</p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-1">Thanh toán</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {selectedOrder.paymentMethod === 'VNPAY' ? 'VNPay' : selectedOrder.paymentMethod === 'MOMO' ? 'MoMo' : 'Tiền mặt (COD)'} 
+                          <span className={`ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${selectedOrder.paymentStatus === 'COMPLETED' ? 'bg-green-100 text-green-700' : selectedOrder.paymentStatus === 'FAILED' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}`}>
+                            {selectedOrder.paymentStatus === 'COMPLETED' ? 'Đã thanh toán' : selectedOrder.paymentStatus === 'FAILED' ? 'Thất bại' : 'Chờ thanh toán'}
+                          </span>
+                        </p>
+                        {selectedOrder.paymentReference && <p className="text-xs text-gray-500 mt-1 font-mono">Ref: {selectedOrder.paymentReference}</p>}
                       </div>
                     </div>
 
@@ -297,8 +396,14 @@ export default function AdminOrders() {
                     <div className="border-t border-gray-100 pt-4 space-y-2">
                       <div className="flex justify-between text-sm text-gray-600">
                         <span>Tạm tính</span>
-                        <span>{selectedOrder.finalTotal.toLocaleString("vi-VN")} ₫</span>
+                        <span>{selectedOrder.subTotal ? selectedOrder.subTotal.toLocaleString("vi-VN") : selectedOrder.finalTotal.toLocaleString("vi-VN")} ₫</span>
                       </div>
+                      {selectedOrder.discountAmount > 0 && (
+                        <div className="flex justify-between text-sm text-[hsl(154,35%,30%)]">
+                          <span>Giảm giá {selectedOrder.voucherCode ? `(${selectedOrder.voucherCode})` : ''}</span>
+                          <span>-{selectedOrder.discountAmount.toLocaleString("vi-VN")} ₫</span>
+                        </div>
+                      )}
                       <div className="flex justify-between text-sm text-gray-600">
                         <span>Phí giao hàng</span>
                         <span>0 ₫</span>

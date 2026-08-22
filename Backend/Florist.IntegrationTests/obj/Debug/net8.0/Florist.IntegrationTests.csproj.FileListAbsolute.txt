@@ -170,3 +170,5 @@ D:\Florist-main\Florist-main\Backend\Florist.IntegrationTests\obj\Debug\net8.0\r
 D:\Florist-main\Florist-main\Backend\Florist.IntegrationTests\obj\Debug\net8.0\Florist.IntegrationTests.pdb
 D:\Florist-main\Florist-main\Backend\Florist.IntegrationTests\obj\Debug\net8.0\Florist.IntegrationTests.genruntimeconfig.cache
 D:\Florist-main\Florist-main\Backend\Florist.IntegrationTests\obj\Debug\net8.0\ref\Florist.IntegrationTests.dll
+D:\Florist-main\Florist-main\Backend\Florist.IntegrationTests\bin\Debug\net8.0\Npgsql.dll
+D:\Florist-main\Florist-main\Backend\Florist.IntegrationTests\bin\Debug\net8.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll

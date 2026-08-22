@@ -41,5 +41,37 @@ namespace Florist.Infrastructure.Services
             _context.AuditLogs.Add(auditLog);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<object> GetLogsAsync(int page, int pageSize)
+        {
+            var query = _context.AuditLogs.AsQueryable();
+            var totalCount = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(query);
+
+            var items = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+                query.OrderByDescending(l => l.CreatedAt)
+                     .Skip((page - 1) * pageSize)
+                     .Take(pageSize)
+                     .Select(l => new Florist.Application.DTOs.Admin.AuditLogDto
+                     {
+                         Id = l.Id,
+                         UserId = l.UserId,
+                         Action = l.Action,
+                         Resource = l.Resource,
+                         ResourceId = l.ResourceId,
+                         IPAddress = l.IPAddress,
+                         UserAgent = l.UserAgent,
+                         Metadata = l.Metadata,
+                         CreatedAt = l.CreatedAt
+                     })
+            );
+
+            return new
+            {
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                Items = items
+            };
+        }
     }
 }
